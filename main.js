@@ -36,7 +36,7 @@ var doubleStep={
 var mineBot={
     startMine(){
         this.running=true;
-        this.pos=0;
+        this.pos=1;
         this.direction='e';
         this.timer=setInterval(function(){mineBot.mine()}, 1000);
     },
@@ -53,20 +53,22 @@ var mineBot={
             this.nextMove='move';
         }
         else if (this.pos>=1000){// rebound
+            SOCKET.send({action: "event_choice", option: "__leave__"});// stop getting stuck on events
             this.direction='w';
             this.pos--;
-            SOCKET.send({action: 'setDir', dir: 'sw', autowalk:false});
-        }
+            SOCKET.send({action: 'setDir', dir: 'sw', autowalk:false});        }
         else if(this.pos<=0){
+            SOCKET.send({action: "event_choice", option: "__leave__"});
             this.direction='e';
             this.pos++;
             SOCKET.send({action: 'setDir', dir: 'se', autowalk:false});
         }
         else{
+            SOCKET.send({action: "event_choice", option: "__leave__"});
             SOCKET.send({action: "setDir", dir: this.direction, autowalk: false});
             if(this.direction=='e'){this.pos++;}
             else{this.pos--;}
-            this.nextMove='dig'
+            this.nextMove='dig';
         }
     },
     endMine(){
@@ -174,10 +176,10 @@ function init(){
     insertedHTML.innerHTML=
     //this is the html added to the bottom of the webpage
     // the \ is so the string can be multiline and readable
-   '<div id="Utility Hot Bar" style="margin:auto;width:306px;">\
+   '<div id="Utility Hot Bar" style="margin:auto;width:318px;">\
         <style>\
         .tool{\
-            margin:auto;\
+            margin:2px 2px;\
             border-width:1px;\
             border-style:solid;\
             width:100px;\
