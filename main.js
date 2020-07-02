@@ -68,7 +68,6 @@ var mineBot={
             else{this.pos--;}
             this.nextMove='dig'
         }
-        console.log(this.pos);
     },
     endMine(){
         clearInterval(this.timer);
