@@ -25,9 +25,52 @@ var XPBot={
 var doubleStep={
     startDStep(){
         this.running=true;
-        this.timer=setInterval(function(){DSTEP.click()}, 1000)
+        this.timer=setInterval(function(){DSTEP.click()}, 1010);
     },
     stop(){
+        clearInterval(this.timer);
+        this.running=false;
+    }
+}
+// metal detector mine bot
+var mineBot={
+    startMine(){
+        this.running=true;
+        this.pos=0;
+        this.direction='e';
+        this.timer=setInterval(function(){mineBot.mine()}, 1000);
+    },
+    mine(){
+        this.lastMessage=document.getElementById('enginelog-latestmessage');
+        if (this.lastMessage.textContent.includes('the metal detector pings.')){
+            ENGINE.log('mined');
+            SOCKET.send({action: "equipment", option: "dig_with_shovel"});
+            this.nextMove='take all';
+        }
+        else if(this.nextMove=='take all'){
+            SOCKET.send({action: "loot_takeall"});
+            SOCKET.send({action: "loot_next"});
+            this.nextMove='move';
+        }
+        else if (this.pos>=1000){// rebound
+            this.direction='w';
+            this.pos--;
+            SOCKET.send({action: 'setDir', dir: 'sw', autowalk:false});
+        }
+        else if(this.pos<=0){
+            this.direction='e';
+            this.pos++;
+            SOCKET.send({action: 'setDir', dir: 'se', autowalk:false});
+        }
+        else{
+            SOCKET.send({action: "setDir", dir: this.direction, autowalk: false});
+            if(this.direction=='e'){this.pos++;}
+            else{this.pos--;}
+            this.nextMove='dig'
+        }
+        console.log(this.pos);
+    },
+    endMine(){
         clearInterval(this.timer);
         this.running=false;
     }
@@ -39,7 +82,8 @@ var controller={
     start(job){
         if (this.runningList!=[]){// stops multiple task from running and conflicting
             for (i=0; i<this.runningList.length; i++){
-                stop(i);
+                console.log(this.runningList[i])
+                this.toggle(this.runningList[i]);
             }
         }
         if (job=='xp'){
@@ -47,6 +91,9 @@ var controller={
         }
         else if(job=='doubleStep'){
             doubleStep.startDStep();
+        }
+        else if(job=='dig'){
+            mineBot.startMine();
         }
         this.runningList.push(job)
     },
@@ -57,6 +104,9 @@ var controller={
         }
         else if(job=='doubleStep'){
             doubleStep.stop();
+        }
+        else if(job=='dig'){
+            mineBot.endMine();
         }
         this.runningList.splice(this.runningList.indexOf(job), 1)// clears list
     },
@@ -70,12 +120,20 @@ var controller={
                 this.start('xp');
             }
         }
-        else if (job=='doublestep'){//dstep
+        else if (job=='doubleStep'){//dstep
             if (doubleStep.running==true){
                 this.stop('doubleStep');
             }
             else{
                 this.start('doubleStep');
+            }
+        }
+        else if(job=='dig'){// mine
+            if (mineBot.running==true){
+                this.stop('dig')
+            }
+            else{
+                this.start('dig')
             }
         }
         else{
@@ -117,7 +175,7 @@ function init(){
     insertedHTML.innerHTML=
     //this is the html added to the bottom of the webpage
     // the \ is so the string can be multiline and readable
-   '<div id="Utility Hot Bar" style="margin:auto;width:204px;">\
+   '<div id="Utility Hot Bar" style="margin:auto;width:306px;">\
         <style>\
         .tool{\
             margin:auto;\
@@ -141,7 +199,8 @@ function init(){
         }\
         </style>\
         <div class="tool toolUnClicked" onclick=controller.toggle("xp") id="xp">Afk Xp</div>\
-        <div class="tool toolUnClicked" onclick=controller.toggle("doublestep") id="doublestep">Auto Double Step</div>\
+        <div class="tool toolUnClicked" onclick=controller.toggle("doubleStep") id="doubleStep">Auto Double Step</div>\
+        <div class="tool toolUnClicked" onclick=controller.toggle("dig") id="dig">Auto Mine</div>\
     </div>';
     var target=document.getElementById('game-content').getElementsByClassName('mid-screencontainer scrollbar')[0];
     target.appendChild(insertedHTML);
