@@ -201,7 +201,7 @@ function init(){
         </style>\
         <div class="tool toolUnClicked" onclick=controller.toggle("xp") id="xp">Afk Xp</div>\
         <div class="tool toolUnClicked" onclick=controller.toggle("doubleStep") id="doubleStep">Auto Double Step</div>\
-        <div class="tool toolUnClicked" onclick=controller.toggle("dig") id="dig">Auto Mine</div>\
+        <div class="tool toolUnClicked" onclick=controller.toggle("dig") id="dig">Auto Mine with Metal Detector</div>\
     </div>';
     var target=document.getElementById('game-content').getElementsByClassName('mid-screencontainer scrollbar')[0];
     target.appendChild(insertedHTML);
