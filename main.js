@@ -86,6 +86,7 @@ var travelBot={
         this.timer=setInterval(function(){travelBot.travel();}, 1000);
     },
     travel(){
+        SOCKET.send({action: "event_choice", option: "__leave__"});
         if (this.yDest>YOU.y){// north south
             this.travelDir='n';
         }
