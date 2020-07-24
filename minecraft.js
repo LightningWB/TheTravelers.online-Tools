@@ -1,0 +1,12 @@
+WORLD.TILES.forest = "<img src='https://pfg.pw/mapexplorer/images/forest.png'>";
+WORLD.TILES.grass = "<img src='https://pfg.pw/mapexplorer/images/grass.png' style='width:20px;height:20px;'>";
+WORLD.TILES.island = "<img src='https://pfg.pw/mapexplorer/images/island.png' style='width:20px;height:20px;'>";
+WORLD.TILES.monument = "<img src='https://pfg.pw/mapexplorer/images/monument.png' style='width:20px;height:20px;'>";
+WORLD.TILES.mountain = "<img src='https://pfg.pw/mapexplorer/images/mountain.png' style='width:20px;height:20px;'>";
+WORLD.TILES.sand = "<img src='https://pfg.pw/mapexplorer/images/sand.png' style='width:20px;height:30px;'>";
+WORLD.TILES.swamp = "<img src='https://pfg.pw/mapexplorer/images/swamp.png' style='width:20px;height:20px;'>";
+WORLD.TILES.tree = "<img src='https://pfg.pw/mapexplorer/images/tree.png' style='width:20px;height:20px;'>";
+WORLD.TILES.water = "<img src='https://pfg.pw/mapexplorer/images/water.gif' style='width:20px;height:20px;'>";
+WORLD.TILES.worldedge = "<img src='https://pfg.pw/mapexplorer/images/worldedge.png' style='width:20px;height:20px;'>";
+WORLD.TILES.traveler = "<img src='https://i.pinimg.com/originals/00/28/6b/00286bddde10d72801fb3a1671d1b292.jpg' style='width:20px;height:20px;'>";
+YOU.char=WORLD.TILES.traveler;WORLD.build();
