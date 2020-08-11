@@ -1,5 +1,5 @@
 // the travelers tools by LightningWB
-// 1.1
+// 1.3
 // I am trying to keep all the code in one file so it is easier to setup
 // this is a small spiral loop function that I modified slightly for my use from Neatsu on stack exchange. https://stackoverflow.com/a/46852039 All credit for this goes to him
 // spiral find
@@ -10,7 +10,7 @@ let spiralFind = (x, y, step, count, target, target2=null, exempt=[]) => {
 
     for ( let i = 0; i < count; i++ ) {
         // stuff I added
-        if (!exempt.includes([YOU.x+x,YOU.y+y])){
+        if (!doesArrayIncludeArray(exempt,[YOU.x+x,YOU.y+y])){
             if(document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent==target || document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent==target2){
                 return {found:true, relX:x, relY:y};
             }
@@ -53,7 +53,7 @@ let spiralFind = (x, y, step, count, target, target2=null, exempt=[]) => {
         }
     }
     return {found:false, relX:null, relY:null};
-}
+};
 //Xp
 var XPBot={
     startXP(){
@@ -132,9 +132,11 @@ var mineBot={
 };
 // travel
 var travelBot={
-    xDest:YOU.x,
-    yDest:YOU.y,
     start(){
+        if(this.xDes=undefined){
+            this.xDest=YOU.x;
+            this.yDest=YOU.y;
+        }
         this.running=true;
         this.timer=setInterval(function(){travelBot.travel();}, 1000);
     },
@@ -353,81 +355,99 @@ var treeBot={
 // Auto city and house
 var autoLoot={
     getUMF:false,
+    exemptList:[],
+    beenThroughHazDoor:false,
+    doneTreasuryDesk:false,
+    doneTreasuryWoodCloset:false,
+    beenInSkyscraper:false,
+    beenInTent:false,
+    lootedBody:false,
+    readyToLeave:false,
+    gottenUMF:false,
+    beenEastLoot:false,
+    defaultDir:'e',
     start(){
         this.running=true;
-        this.timer=setInterval(function(){autoLoot.raid()}, 1000);
+        this.timer=setInterval(function(){autoLoot.raid()}, 1200);// I am doing 1.2 seconds because some cycles take longer and getting stuck in events is annoying. It will be slightly slower but less prone to getting stuck
     },
     raid(){
         if(this.nextMove=='steal'){
-            if (popup.isOpen==true){// stops if there is a little lag
-                if(POPUP.evTitle=='a desolate city'){// cities
+            if (POPUP.isOpen==true||LOOT.mainEl.style.display==''){// stops if there is a little lag
+                if(POPUP.evTitle.innerHTML=='a desolate city'){// cities
                     this.placeType='desolate'
                 }
-                else if(POPUP.evTitle=='a walled city'){
+                else if(POPUP.evTitle.innerHTML=='a walled city'){
                     this.placeType='walled'
                 }
-                else if(POPUP.evTitle=='a withered city'){
+                else if(POPUP.evTitle.innerHTML=='a withered city'){
                     this.placeType='withered'
                 }
-                else if(POPUP.evTitle=='a governing city'){
+                else if(POPUP.evTitle.innerHTML=='a governing city'){
                     this.placeType='governing'
                 }
-                else if(POPUP.evTitle=='a blasted city'){
+                else if(POPUP.evTitle.innerHTML=='a blasted city'){
                     this.placeType='blasted'
                 }
-                else if(POPUP.evTitle=='a barn'){// houses
+                else if(POPUP.evTitle.innerHTML=='a barn'){// houses
                     this.placeType='barn'
                 }
-                else if(POPUP.evTitle=='a cabin'){
+                else if(POPUP.evTitle.innerHTML=='a cabin'){
                     this.placeType='cabin'
                 }
-                else if(POPUP.evTitle=='a garage'){
+                else if(POPUP.evTitle.innerHTML=='a garage'){
                     this.placeType='garage'
                 }
-                else if(POPUP.evTitle=='a childcare center'){
+                else if(POPUP.evTitle.innerHTML=='a childcare center'){
                     this.placeType='childcare'
                 }
-                else if(POPUP.evTitle=='a church'){
+                else if(POPUP.evTitle.innerHTML=='a church'){
                     this.placeType='church'
                 }
-                else if(POPUP.evTitle=='a humble residence'){
+                else if(POPUP.evTitle.innerHTML=='a humble residence'){
                     this.placeType='humble'
                 }
-                else if(POPUP.evTitle=='a low home'){
+                else if(POPUP.evTitle.innerHTML=='a low home'){
                     this.placeType='low'
                 }
-                else if(POPUP.evTitle=='an old home'){
+                else if(POPUP.evTitle.innerHTML=='an old home'){
                     this.placeType='old'
                 }
-                else if(POPUP.evTitle=='a pet store'){
+                else if(POPUP.evTitle.innerHTML=='a pet store'){
                     this.placeType='pet'
                 }
-                else if(POPUP.evTitle=='a ruined house'){
+                else if(POPUP.evTitle.innerHTML=='a ruined house'){
                     this.placeType='ruined'
                 }
-                else if(POPUP.evTitle=='a run-down shack'){
+                else if(POPUP.evTitle.innerHTML=='a run-down shack'){
                     this.placeType='run-down'
                 }
-                else if(POPUP.evTitle=='a weatherd house'){
+                else if(POPUP.evTitle.innerHTML=='a weathered house'){
                     this.placeType='weathered'
                 }
                 this.collect()
             }
+            if(POPUP.isOpen==false&&LOOT.mainEl.style.display=='none'){this.leaveEvent()}
+            if(POPUP.isOpen==false&&LOOT.mainEl.style.display=='none'&&this.left==true){
+                this.left=false;
+                this.nextMove='back';
+            }
         }
         else if(this.nextMove==='collect'){
-            this.collect();
-            this.nextMove='steal';
-            this.targetX=YOU.x-this.prevCoords.x;
-            this.targetY=YOU.y-this.prevCoords.y;
+            if(this.goto(this.targetX,this.targetY)=='there'){
+                this.exemptList.push([this.targetX+YOU.x,this.targetY+YOU.y])
+                this.nextMove='steal';
+                this.targetX=this.prevCoords.x-YOU.x;
+                this.targetY=this.prevCoords.y-YOU.y;
+            }
         }
-        else if (this.nextMove==='move'){
+        else if (this.nextMove=='move'){
             this.goto(this.targetX, this.targetY)
         }
-        else if(this.nextMove==='back'){
+        else if(this.nextMove=='back'){
             this.goto(this.targetX, this.targetY)
         }
         else{
-            spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H');
+            spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H', exempt=this.exemptList);
             if (spiralResults.found===true){
                 this.nextMove='move';
                 this.targetX=spiralResults.relX;
@@ -435,7 +455,11 @@ var autoLoot={
                 this.prevCoords={x:YOU.x, y:YOU.y};
             }
             else{
-                setDir('e');
+                setDir(this.defaultDir);
+                SOCKET.send({
+                    action:'event_choice',
+                    option:'__leave__'
+                })
             }
         }
     },
@@ -477,6 +501,7 @@ var autoLoot={
             return'there';
         }
         else{
+            this.leaveEvent();
             setDir(travelDir);
             return'notThere';
         }
@@ -485,14 +510,120 @@ var autoLoot={
         if(WORLD.deriveTile(YOU.x, YOU.y)=='C'){// city paths
             switch(this.placeType){
                 case 'desolate':
+                    this.handelEvent('a desolate city', 'the highway');
+                    if(this.beenInTent==false){
+                        this.handelEvent('the midst of the towers', 'the tent')
+                    }
+                    if(this.lootAll('a camping tent')){this.beenInTent=true;}
+                    if(this.beenInTent==true&&this.beenInSkyscraper==false&&this.handelEvent('the midst of the towers', 'the skyscraper')){
+                        this.beenInSkyscraper=true;
+                        break;
+                    }
+                    this.handelEvent("the tower's bones", 'the corner');
+                    if(this.lootedBody==false&&this.handelEvent('the ruined office', 'the body')){
+                        this.lootedBody=true;
+                    }
+                    this.lootAll('a dead man');
+                    if(this.lootedBody==true){
+                        this.handelEvent('the ruined office', 'go back');
+                    }
+                    if(this.beenInTent==true&&this.beenInSkyscraper==true&&this.lootedBody==true){
+                        this.handelEvent('the midst of the towers', 'the subway');
+                    }
+                    this.handelEvent('the subway', 'the railway');
+                    this.handelEvent('the tunnel', 'keep walking');
+                    this.handelEvent('another platform', 'check the bodies');
+                    this.lootAll('homeless bodies');
+                    this.handelEvent('the buried platform', 'the tunnel')
+                    this.leaveEvent(name='the continuing dark tunnel');
                     break;
                 case 'walled':
+                    this.handelEvent('a walled city', 'the eastern side')
+                    this.handelEvent('the collapsed eastern wall', 'swim to the refinery')
+                    this.handelEvent('ashen waters', 'circle the perimeter')
+                    if(!this.beenThroughHazDoor){
+                        this.handelEvent('the perimeter', 'the main entrance')
+                        this.handelEvent('the main area', 'the hazard door')
+                    }
+                    if(this.handelEvent('the hazard door', 'the control panel')){this.beenThroughHazDoor=true;}
+                    this.handelEvent('the control panel', 'the gap in the wall')
+                    this.handelEvent('the gap', 'check wood box')
+                    this.lootAll('a rotten wood box')
+                    this.handelEvent('the dark room','activate button')
+                    this.handelEvent('a flood of water','escape up the stairs')
+                    this.handelEvent('a flood of water','back up stairs')
+                    if(this.beenThroughHazDoor){
+                        this.handelEvent('a flood of water','back up stairs')
+                        this.handelEvent('the main area','back out toward the city')
+                        if(this.leaveEvent()){this.beenThroughHazDoor=false;}
+                    }
                     break;
                 case 'withered':
+                    this.handelEvent('a withered city', 'the tunnel');
+                    this.handelEvent('the tunnel', 'enter sewage system');
+                    this.handelEvent('dark tunnels', 'go east');
+                    this.handelEvent('the east path', 'continue');
+                    if(this.getUMF==true&&this.gottenUMF==false){
+                        this.handelEvent('a frigid intersection', 'north');
+                    }
+                    if(this.gottenUMF==true||this.getUMF==false){
+                        this.handelEvent('a frigid intersection', 'south');
+                    }
+                    if(this.lootAll('a strange cube')){
+                        this.gottenUMF=true;
+                    }
+                    this.lootAll('an abandoned backpack');
+                    if(this.beenEastLoot==false&&this.handelEvent('discolored liquid', 'east')){
+                        this.beenEastLoot=true;
+                    }
+                    this.handelEvent('discolored liquid', 'south');
+                    this.handelEvent('dim daylight', 'west');
+                    if(this.leaveEvent(name='outside')){
+                        this.gottenUMF=false;
+                        this.beenEastLoot=false;
+                    }
                     break;
                 case 'governing':
+                    this.handelEvent('a governing city', 'the tunnel')
+                    this.handelEvent('strong stone', 'continue')
+                    this.handelEvent('a concrete path', 'continue')
+                    this.handelEvent('the winding path', 'continue')
+                    this.handelEvent('the treasury', 'enter')
+                    if(!this.doneTreasuryDesk){
+                        this.handelEvent("the treasury's lobby", 'the desk')
+                        if(this.lootAll('the desk')){this.doneTreasuryDesk=true;}
+                    }
+                    if(!this.doneTreasuryWoodCloset&&this.doneTreasuryDesk){
+                        if(this.handelEvent("the treasury's lobby", 'the wooden closet')){this.doneTreasuryWoodCloset=true;}
+                    }
+                    this.lootAll('the wooden closet')
+                    if(this.doneTreasuryDesk&&this.doneTreasuryWoodCloset){
+                        this.handelEvent("the treasury's lobby", 'back outside')
+                        if(this.leaveEvent()){this.doneTreasuryDesk=false;this.doneTreasuryWoodCloset=false;}
+                    }
                     break;
                 case 'blasted':
+                    this.handelEvent('a blasted city', 'the road')
+                    this.handelEvent('black and red', 'the tower')
+                    if(!this.doneElevator){
+                        this.handelEvent('the tower lobby', 'the elevator')
+                        if(this.lootAll('the elevator shaft')){this.doneElevator=true;}
+                    }
+                    if(!this.doneOffice){
+                        this.handelEvent('the tower lobby', 'the exit sign')
+                        this.handelEvent('the exit sign', 'the fire escape')
+                        this.handelEvent('the fire escape', 'the eighth floor')
+                        this.handelEvent('the eighth floor', 'the office')
+                        this.handelEvent('the office', 'loot area')
+                        this.lootAll('the blasted office')
+                        this.handelEvent('the office', 'return to tower base')
+                        if(this.handelEvent('descent', 're-enter tower')){this.doneOffice=true;}
+                    }
+                    if(this.doneOffice, this.doneElevator, POPUP.evTitle.innerHTML=='the tower lobby'){
+                        this.doneElevator=false;
+                        this.doneOffice=false;
+                        this.leaveEvent();
+                    }
                     break;
             }
         }
@@ -502,16 +633,22 @@ var autoLoot={
                     this.leaveEvent();
                     break;
                 case 'cabin':
-                    if(POPUP.evTitle=='a cabin'){
-                        //add in button here
-                    }
+                    this.handelEvent('a cabin', 'check the back');
+                    this.handelEvent('the backyard', 'a plastic container');
+                    this.lootAll('a plastic container')  
                     break;
                 case 'childcare':
                     this.leaveEvent();
                     break;
                 case 'church':
+                    this.handelEvent('a church', 'investigate')
+                    this.handelEvent('rows of pews', 'the book')
+                    this.handelEvent('a withered book', 'the back halls')
+                    this.handelEvent('the back halls', 'the control room')
+                    this.lootAll('the control room')
                     break;
                 case 'garage':
+                    this.leaveEvent();
                     break;
                 case 'humble':
                     this.leaveEvent();
@@ -520,26 +657,77 @@ var autoLoot={
                     this.leaveEvent();
                     break;
                 case 'old':
+                    this.handelEvent('an old home', 'enter')
+                    this.handelEvent('the living room', 'the back room')
+                    this.handelEvent('the back room', 'the closet')
+                    this.handelEvent('the closet', 'search')
+                    this.lootAll('a cardboard box')
                     break;
                 case 'pet':
+                    this.handelEvent('a pet store', 'enter');
+                    this.handelEvent('inside', 'the aisles');
+                    this.handelEvent('the aisles', 'the adoption center');
+                    this.handelEvent('the adoption center', 'the stocking room');
+                    this.handelEvent('the stocking room', 'look around');
+                    this.lootAll('the shelves');
                     break;
                 case 'ruined':
+                    this.handelEvent('a ruined house', 'the kitchen')
+                    this.handelEvent('the kitchen', 'an old note')
+                    this.handelEvent('an old note', 'the top floor')
+                    this.handelEvent('the top floor', 'search')
+                    this.lootAll('an old trash bag')
                     break;
                 case 'run-down':
+                    this.handelEvent('a run-down shack', 'check shack')
+                    this.lootAll('inside the shack')
                     break;
                 case 'weathered':
+                    this.handelEvent('a weathered house','enter')
+                    this.handelEvent('the entrance hall','the kitchen')
+                    this.handelEvent('the kitchen', 'the backyard')
+                    this.lootAll('the backyard')
                     break;
             }
         }
     },
-    leaveEvent(){
+    leaveEvent(name=undefined){//I added in name this way so I wouldn't have to rewrite code that worked
+        if(!name==undefined&&!POPUP.evTitle.innerHTML==name){
+            return;
+        }
         classList=document.getElementsByClassName('popup-button')
         for(i=0;i<classList.length;i++){
             if(classList[i].value=='exit event'){
                 classList[i].click();
+                return true;
             }
         }
-        this.nextMove='back';
+        this.left=true;
+    },
+    lootAll(name){
+        if(name==LOOT.titleEl.innerHTML){
+            SOCKET.send({action: "loot_takeall"});
+            SOCKET.send({action: "loot_next"});
+            return true;
+        }
+    },
+    handelEvent(name,solution){
+        if(POPUP.evTitle.innerHTML==name){
+            classList=document.getElementsByClassName('popup-button')
+            otherList=document.getElementsByClassName('popup-reqbutton');
+            for(i=0;i<classList.length;i++){
+                if(classList[i].value==solution){
+                    //console.log(solution) //quite useful for debugging
+                    classList[i].click();
+                    return true;
+                }
+                if(otherList.length>0&&otherList[i].toString.includes(solution)){
+                    otherList[i].click();
+                    return true;
+                }
+            }
+
+        }
     },
     changeUMF(){
         if (document.getElementById('UMF').checked===true){
@@ -570,9 +758,9 @@ var autoReconnect={
         controller.toggelColor('reconnect')
     },
     run(){
-        if (SOCKET.isOpen==false){
+        if (SOCKET.isOpen==false){//changed detection as it is unlikely to socket will close and more likely you will be cut
             SOCKET.open();
-            setTimeout(()=>{
+            setTimeout(()=>{//has to wait a little bit to connect to server
             POPUP.hide();
             SOCKET.send({
                 "action": "setDir",
@@ -731,13 +919,22 @@ var color={
 };
 // help popup
 function popupHelp(){
-    POPUP.new('Help', "Afk Xp will walk back and forth. Auto double step will automaticly double step. Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel. Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable. If you don't have a boat equiped you may get stuck.", undefined);
+    POPUP.new('Help', "Afk Xp will walk back and forth. Auto double step will automaticly double step. Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel. Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable. If you don't have a boat equiped you may get stuck. Tree mower will auto farm trees. I am aware that auto city and house raider will miss some loot. AUTO RECONNECT WILL ONLY WORK FOR THE ACCOUNT THAT AUTO LOGIN IS TIED TO.", undefined);
+};
+function doesArrayIncludeArray(array1,array2){//js doesnt compare arrays well
+    for(i=0;i<array1.length;i++){
+        if(array1[i].join('')==array2.join('')){
+            return true;
+        }
+    }
+    return false;
 };
 // new change dir to work with buttons
 function setDir(dir){
     ENGINE.dir(dir, document.getElementById('arrow-'+dir))
 };
 function init(){
+    setTimeout(function(){
     color.getColor();
     var insertedHTML=document.createElement("div");
     insertedHTML.innerHTML=
@@ -765,7 +962,7 @@ function init(){
         }
         }
         </style>
-        <div class="tool toolUnClicked" onclick=controller.toggle("xp") id="xp">Afk Xp</div>
+        <div class="tool toolUnClicked" onclick=controller.toggle("xp") id="xp">Auto Xp</div>
         <div class="tool toolUnClicked" onclick=controller.toggle("doubleStep") id="doubleStep">Auto Double Step</div>
         <div class="tool toolUnClicked" onclick=controller.toggle("dig") id="dig">Auto Mine with Metal Detector</div>
         <div class="tool toolUnClicked" id="travel">
@@ -774,12 +971,12 @@ function init(){
             <input type="number" id="y" placeholder="Y" onchange="travelBot.changeDestinationY(this.value)" style="width:88px">
         </div>
         <div class="tool toolUnClicked" id="treeBot" onclick=controller.toggle('treeBot')>Tree Mower</div>
-        `+/*<div class="tool toolUnClicked" id="autoLoot">
+        <div class="tool toolUnClicked" id="autoLoot">
             <span onclick=controller.toggle('autoLoot') >City/House Raider</span>
             <br>
             <label for='UMF'>Get UMF</label>
             <input type="checkbox" id='UMF' onchange="autoLoot.changeUMF()">
-        </div>*/`
+        </div>
         <div class="tool toolUnClicked" onclick=autoReconnect.toggle() id="reconnect">Auto Reconnect</div>
         <div class="tool toolUnClicked" onclick=popupHelp() id="help">Help</div>
     </div>`;
@@ -787,5 +984,6 @@ function init(){
     target.appendChild(insertedHTML);
     EQUIP.menuEl.style.width="430px";
     BUILD.boxEl.style.width="430px";
+    },1000)
 }
 init();
