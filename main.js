@@ -759,7 +759,7 @@ var autoReconnect={
         controller.toggelColor('reconnect')
     },
     run(){
-        if (SOCKET.isOpen==false){//changed detection as it is unlikely to socket will close and more likely you will be cut
+        if (SOCKET.isOpen==false||POPUP.evTitle.innerHTML=="disconected"){//changed detection as it is unlikely to socket will close and more likely you will be cut
             SOCKET.open();
             setTimeout(()=>{//has to wait a little bit to connect to server
             POPUP.hide();
