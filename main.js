@@ -368,6 +368,7 @@ var autoLoot={
     defaultDir:'e',
     start(){
         this.running=true;
+        this.defaultDir=document.getElementById('defaultDir').value
         this.timer=setInterval(function(){autoLoot.raid()}, 1200);// I am doing 1.2 seconds because some cycles take longer and getting stuck in events is annoying. It will be slightly slower but less prone to getting stuck
     },
     raid(){
@@ -919,7 +920,7 @@ var color={
 };
 // help popup
 function popupHelp(){
-    POPUP.new('Help', "Afk Xp will walk back and forth. Auto double step will automaticly double step. Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel. Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable. If you don't have a boat equiped you may get stuck. Tree mower will auto farm trees. I am aware that auto city and house raider will miss some loot. AUTO RECONNECT WILL ONLY WORK FOR THE ACCOUNT THAT AUTO LOGIN IS TIED TO.", undefined);
+    POPUP.new('Help', "Auto Xp will walk back and forth. Auto double step will automaticly double step. Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel. Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable. If you don't have a boat equiped you may get stuck. Tree mower will auto farm trees. Dir for city and house raider will change the direction it will go when looking for houses. I am aware that auto city and house raider will miss some loot. AUTO RECONNECT WILL ONLY WORK FOR THE ACCOUNT THAT AUTO LOGIN IS TIED TO.", undefined);
 };
 function doesArrayIncludeArray(array1,array2){//js doesnt compare arrays well
     for(i=0;i<array1.length;i++){
@@ -934,7 +935,6 @@ function setDir(dir){
     ENGINE.dir(dir, document.getElementById('arrow-'+dir))
 };
 function init(){
-    setTimeout(function(){
     color.getColor();
     var insertedHTML=document.createElement("div");
     insertedHTML.innerHTML=
@@ -972,10 +972,17 @@ function init(){
         </div>
         <div class="tool toolUnClicked" id="treeBot" onclick=controller.toggle('treeBot')>Tree Mower</div>
         <div class="tool toolUnClicked" id="autoLoot">
-            <span onclick=controller.toggle('autoLoot') >City/House Raider</span>
+            <span onclick=controller.toggle('autoLoot') >C/H Raider</span>
             <br>
             <label for='UMF'>Get UMF</label>
             <input type="checkbox" id='UMF' onchange="autoLoot.changeUMF()">
+            <label for="defaultDir">Dir</label>
+            <select name="defaultDir" id="defaultDir" style="background:inherit;">
+                <option value="n">North</option>
+                <option value="e">East</option>
+                <option value="s">South</option>
+                <option value="w">West</option>
+            </select>
         </div>
         <div class="tool toolUnClicked" onclick=autoReconnect.toggle() id="reconnect">Auto Reconnect</div>
         <div class="tool toolUnClicked" onclick=popupHelp() id="help">Help</div>
@@ -984,6 +991,5 @@ function init(){
     target.appendChild(insertedHTML);
     EQUIP.menuEl.style.width="430px";
     BUILD.boxEl.style.width="430px";
-    },1000)
 }
 init();
