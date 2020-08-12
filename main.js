@@ -425,7 +425,7 @@ var autoLoot={
                 else if(POPUP.evTitle.innerHTML=='a weathered house'){
                     this.placeType='weathered'
                 }
-                this.collect()
+                this.collect();
             }
             if(POPUP.isOpen==false&&LOOT.mainEl.style.display=='none'){this.leaveEvent()}
             if(POPUP.isOpen==false&&LOOT.mainEl.style.display=='none'&&this.left==true){
@@ -435,8 +435,8 @@ var autoLoot={
         }
         else if(this.nextMove==='collect'){
             if(this.goto(this.targetX,this.targetY)=='there'){
-                this.exemptList.push([this.targetX+YOU.x,this.targetY+YOU.y])
                 this.nextMove='steal';
+                this.exemptList.push([this.targetX+YOU.x,this.targetY+YOU.y]);
                 this.targetX=this.prevCoords.x-YOU.x;
                 this.targetY=this.prevCoords.y-YOU.y;
             }
@@ -457,6 +457,7 @@ var autoLoot={
             }
             else{
                 setDir(this.defaultDir);
+                DSTEP.click();
                 SOCKET.send({
                     action:'event_choice',
                     option:'__leave__'
@@ -539,7 +540,8 @@ var autoLoot={
                     this.leaveEvent(name='the continuing dark tunnel');
                     break;
                 case 'walled':
-                    this.handelEvent('a walled city', 'the eastern side')
+                    this.leaveEvent();// a walled city just isnt worth it
+                    /*this.handelEvent('a walled city', 'the eastern side')
                     this.handelEvent('the collapsed eastern wall', 'swim to the refinery')
                     this.handelEvent('ashen waters', 'circle the perimeter')
                     if(!this.beenThroughHazDoor){
@@ -557,7 +559,7 @@ var autoLoot={
                         this.handelEvent('a flood of water','back up stairs')
                         this.handelEvent('the main area','back out toward the city')
                         if(this.leaveEvent()){this.beenThroughHazDoor=false;}
-                    }
+                    }*/
                     break;
                 case 'withered':
                     this.handelEvent('a withered city', 'the tunnel');
@@ -973,9 +975,8 @@ function init(){
         <div class="tool toolUnClicked" id="treeBot" onclick=controller.toggle('treeBot')>Tree Mower</div>
         <div class="tool toolUnClicked" id="autoLoot">
             <span onclick=controller.toggle('autoLoot') >C/H Raider</span>
-            <br>
             <label for='UMF'>Get UMF</label>
-            <input type="checkbox" id='UMF' onchange="autoLoot.changeUMF()">
+            <input type="checkbox" id='UMF' onchange="autoLoot.changeUMF()" style="margin-bottom:0px;">
             <label for="defaultDir">Dir</label>
             <select name="defaultDir" id="defaultDir" style="background:inherit;">
                 <option value="n">North</option>
@@ -989,7 +990,7 @@ function init(){
     </div>`;
     var target=document.getElementById('game-content').getElementsByClassName('mid-screencontainer scrollbar')[0];
     target.appendChild(insertedHTML);
-    EQUIP.menuEl.style.width="430px";
-    BUILD.boxEl.style.width="430px";
+    EQUIP.menuEl.style.width="420px";
+    BUILD.boxEl.style.width="420px";
 }
 init();
