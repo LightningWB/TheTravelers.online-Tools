@@ -955,11 +955,11 @@ function init(){
         .toolUnClicked{
             color:`+color.textColor+`;
             border-color:`+color.textColor+`;
-            background-color:`+color.backgroundColor+`;
+            background-color:`+color.background+`;
         }
         .toolClicked{
-            color:`+color.clickedTextColo+`;
-            border-color:`+color.clickedTextColo+`;
+            color:`+color.clickedTextColor+`;
+            border-color:`+color.clickedTextColor+`;
             background-color:`+color.clickedBackground+`;
         }
         }
