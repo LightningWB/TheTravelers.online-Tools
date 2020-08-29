@@ -3,7 +3,7 @@
 // I am trying to keep all the code in one file so it is easier to setup
 // this is a small spiral loop function that I modified slightly for my use from Neatsu on stack exchange. https://stackoverflow.com/a/46852039 All credit for this goes to him
 // spiral find
-let spiralFind = (x, y, step, count, target, target2=null, exempt=[]) => {
+let spiralFind = (x, y, step, count, target, target2=null, target3=null, exempt=[]) => {
     let distance = 0;
     let range = 1;
     let direction = 'up';
@@ -11,7 +11,7 @@ let spiralFind = (x, y, step, count, target, target2=null, exempt=[]) => {
     for ( let i = 0; i < count; i++ ) {
         // stuff I added
         if (!doesArrayIncludeArray(exempt,[YOU.x+x,YOU.y+y])){
-            if(document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent==target || document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent==target2){
+            if(document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent==target || document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent==target2 || document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent==target3){
                 return {found:true, relX:x, relY:y};
             }
         }
@@ -77,9 +77,23 @@ var XPBot={
 };
 //Double step
 var doubleStep={
+    toggle(){
+        if(this.running){
+            this.stop();
+        }
+        else{
+            this.startDStep();
+        }
+        controller.toggelColor('doubleStep');
+    },
     startDStep(){
         this.running=true;
-        this.timer=setInterval(function(){DSTEP.click();}, 1010);
+        this.timer=setInterval(function(){doubleStep.run();}, 1010);
+    },
+    run(){
+        if(XP.sp>=10){
+            DSTEP.click();
+        }
     },
     stop(){
         clearInterval(this.timer);
@@ -92,7 +106,7 @@ var mineBot={
         this.running=true;
         this.pos=1;
         this.direction='e';
-        this.timer=setInterval(function(){mineBot.mine();}, 1000);
+        this.timer=setInterval(function(){mineBot.mine();}, 1100);// increased interval because it kept getting stuck
     },
     mine(){
         this.lastMessage=document.getElementById('enginelog-latestmessage');
@@ -132,12 +146,13 @@ var mineBot={
 };
 // travel
 var travelBot={
+    xDest:YOU.x,
+    yDest:YOU.y,
     start(){
-        if(this.xDes=undefined){
-            this.xDest=YOU.x;
-            this.yDest=YOU.y;
-        }
         this.running=true;
+        if(!doubleStep.running){
+            doubleStep.toggle();
+        }
         this.timer=setInterval(function(){travelBot.travel();}, 1000);
     },
     travel(){
@@ -228,11 +243,13 @@ var travelBot={
                 }
             }
         }
-        DSTEP.click();
         setDir(this.travelDir);
     },
     stop(){
         this.running=false;
+        if(doubleStep.running){
+            doubleStep.toggle();
+        }
         clearInterval(this.timer);
     },
     changeDestinationX(x){
@@ -275,10 +292,12 @@ var travelBot={
 var treeBot={
     start(){
         this.running=true;
+        this.defaultDir=document.getElementById('treeDefaultDir').value;
         this.timer=setInterval(function(){treeBot.tree()}, 1000);
     },
     tree(){
         SOCKET.send({action: "event_choice", option: "__leave__"});
+        INT.leaveInit();
         if(this.nextMove==='collect'){
             HANDS.gettree(document.getElementById('hands-tree'));
             this.nextMove='back';
@@ -305,7 +324,7 @@ var treeBot={
                 this.prevCoords={x:YOU.x, y:YOU.y};
             }
             else{
-                setDir('e');
+                setDir(this.defaultDir);
             }
         }
     },
@@ -450,6 +469,9 @@ var autoLoot={
         else{
             spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H', exempt=this.exemptList);
             if (spiralResults.found===true){
+                if(doubleStep.running){
+                    doubleStep.toggle();
+                }
                 this.nextMove='move';
                 this.targetX=spiralResults.relX;
                 this.targetY=spiralResults.relY;
@@ -457,7 +479,9 @@ var autoLoot={
             }
             else{
                 setDir(this.defaultDir);
-                DSTEP.click();
+                if(!doubleStep.running){
+                    doubleStep.toggle();
+                }
                 SOCKET.send({
                     action:'event_choice',
                     option:'__leave__'
@@ -468,6 +492,9 @@ var autoLoot={
     stop(){
         clearInterval(this.timer);
         this.running=false;
+        if(doubleStep.running){
+            doubleStep.toggle();
+        }
         this.nextMove='travel'
     },
     goto(x, y){
@@ -771,12 +798,52 @@ var autoReconnect={
                 "autowalk": YOU.autowalk
             });}, 1000)
         }
+        if(POPUP.evTitle.innerHTML=="disconnected"&&SOCKET.isOpen==true){
+            POPUP.hide();
+        }
     },
     stop(){
         this.running=false;
         clearInterval(this.timer);
     }
 }
+// event stopper
+var eventStop={
+    running:false,
+    knownList:['&nbsp;', ',', 't','w','M','H','C','<b>&amp;</b>','.','~','T','<b><b>&amp;</b></b>','&amp;'],
+    newList:[],
+    toggle(){
+        if (this.running==false){
+            this.running=true;
+            this.timer=setInterval(function(){eventStop.run()}, 1000);
+        }
+        else{this.stop()}
+        controller.toggelColor('eventFind')
+    },
+    run(){
+        for(i=0;i<WORLD.tilemap.length;i++){
+            tile=WORLD.tilemap[i].innerHTML
+            if(this.knownList.includes(tile)==false){
+                this.newList.push(tile)
+                NOTIF.new('NEW LOCATION',1000);
+                this.toggle();
+                controller.toggle('travel');
+            }
+        }
+    },
+    stop(){
+        this.running=false;
+        clearInterval(this.timer);
+    },
+    updateNewPlayer(value){
+        if(value==true){
+            this.knownList.pop();
+        }
+        else{
+            this.knownList.push('&amp;');
+        }
+    }
+};
 // controller
 var controller={
     runningList:[],
@@ -921,8 +988,28 @@ var color={
     }
 };
 // help popup
-function popupHelp(){
-    POPUP.new('Help', "Auto Xp will walk back and forth. Auto double step will automaticly double step. Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel. Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable. If you don't have a boat equiped you may get stuck. Tree mower will auto farm trees. Dir for city and house raider will change the direction it will go when looking for houses. I am aware that auto city and house raider will miss some loot. AUTO RECONNECT WILL ONLY WORK FOR THE ACCOUNT THAT AUTO LOGIN IS TIED TO.", undefined);
+function popupHelp(){// I need the \ so there aren't indentations and it is much more readable
+    POPUP.new('Help', "\
+    Auto Xp will walk back and forth.\
+    Auto double step will automaticly double step.\
+    Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel.\
+    Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable.\
+    If you don't have a boat equiped you may get stuck. Tree mower will auto farm trees.\
+    Dir for city and house raider will change the direction it will go when looking for houses.\
+    I am aware that auto city and house raider will miss some loot.\
+    Location stopper will stop at locations that aren't natural or rare.\
+    Use it while travel is running to stop.\
+    Check the players box to stop for players.\
+    Map explore uses <a href='https://pfg.pw' target='blank'>Pfg's</a> map explorer.\
+      ", undefined);
+};
+// mapexplorer popup
+function popupMap(){
+    POPUP.new('<a href="https://pfg.pw" target="_blank">MapExplorer by pfg</a>',
+    '<iframe src="https://pfg.pw/mapexplorer/" width=640 height=640 class="embed-responsive-item">',
+    undefined);
+    document.getElementById('event-desc').style.maxHeight='650px';
+    POPUP.evBox.style.maxHeight="900px"
 };
 function doesArrayIncludeArray(array1,array2){//js doesnt compare arrays well
     for(i=0;i<array1.length;i++){
@@ -941,7 +1028,26 @@ function init(){
     var insertedHTML=document.createElement("div");
     insertedHTML.innerHTML=
     //this is the html added to the bottom of the webpage
-   `<div id="Utility Hot Bar" style="margin:auto;width:636px;">
+    `
+    <div class='complexHr'>
+        <span class="header">Utility</span>
+    </div>
+    <div id="Utility Hot Bar" style="margin:auto;width:424px;height:62px;">
+        <div class="tool toolUnClicked" onclick=" doubleStep.toggle()" id="doubleStep">Auto Double Step</div>
+        <div class="tool toolUnClicked" id="eventFind">
+            <span onclick=eventStop.toggle() >Location Stopper</span>
+            
+            <label for='playerStop'>Players</label>
+            <input type="checkbox" id='playerStop' onchange="eventStop.updateNewPlayer(this.checked)" style="margin-bottom:0px;">
+        </div>
+        <div class="tool toolUnClicked" onclick=popupMap() >Map Explorer</div>
+        <div class="tool toolUnClicked" onclick=popupHelp() id="help">Help</div>
+    </div>`+
+   `
+   <div class='complexHr'>
+            <span class="header">Bots</span>
+    </div>
+   <div id="Tool Hot Bar" style="margin:auto;width:530px;height:62px;">
         <style>
         .tool{
             margin:2px 2px;
@@ -951,6 +1057,7 @@ function init(){
             height:60px;
             cursor:pointer;
             float:left;
+            text-align:center;
         }   
         .toolUnClicked{
             color:`+color.textColor+`;
@@ -962,17 +1069,40 @@ function init(){
             border-color:`+color.clickedTextColor+`;
             background-color:`+color.clickedBackground+`;
         }
+        .complexHr {
+            margin-top: 15px;
+            margin-bottom: 15px;
+            border: 0;
+            border-top: 1px solid `+color.textColor+`;
+            text-align: center;
+            height: 0px;
+            line-height: 0px;
+        }
+        .header{
+            background-color:`+color.background+`;
+            padding-left:5px;
+            padding-right:5px;
         }
         </style>
         <div class="tool toolUnClicked" onclick=controller.toggle("xp") id="xp">Auto Xp</div>
-        <div class="tool toolUnClicked" onclick=controller.toggle("doubleStep") id="doubleStep">Auto Double Step</div>
         <div class="tool toolUnClicked" onclick=controller.toggle("dig") id="dig">Auto Mine with Metal Detector</div>
         <div class="tool toolUnClicked" id="travel">
             <div onclick=controller.toggle("travel")>Travel</div>
             <input type="number" id="x" placeholder="X" onchange="travelBot.changeDestinationX(this.value)" style="width:88px">
             <input type="number" id="y" placeholder="Y" onchange="travelBot.changeDestinationY(this.value)" style="width:88px">
         </div>
-        <div class="tool toolUnClicked" id="treeBot" onclick=controller.toggle('treeBot')>Tree Mower</div>
+        <div class="tool toolUnClicked" id="treeBot">
+            <span onclick=controller.toggle('treeBot')>
+                Tree Mower
+            </span>
+            <label for="treeDefaultDir">Dir</label>
+            <select name="treeDefaultDir" id="treeDefaultDir" style="background:inherit;">
+                <option value="n">North</option>
+                <option value="e">East</option>
+                <option value="s">South</option>
+                <option value="w">West</option>
+            </select>
+        </div>
         <div class="tool toolUnClicked" id="autoLoot">
             <span onclick=controller.toggle('autoLoot') >C/H Raider</span>
             <label for='UMF'>Get UMF</label>
@@ -985,9 +1115,9 @@ function init(){
                 <option value="w">West</option>
             </select>
         </div>
-        <div class="tool toolUnClicked" onclick=autoReconnect.toggle() id="reconnect">Auto Reconnect</div>
-        <div class="tool toolUnClicked" onclick=popupHelp() id="help">Help</div>
-    </div>`;
+    </div><br>`
+        /*<div class="tool toolUnClicked" onclick=autoReconnect.toggle() id="reconnect">Auto Reconnect</div>*/ // auto reconnect was removed in 1.0.4 R.I.P.
+    ;
     var target=document.getElementById('game-content').getElementsByClassName('mid-screencontainer scrollbar')[0];
     target.appendChild(insertedHTML);
     EQUIP.menuEl.style.width="420px";
