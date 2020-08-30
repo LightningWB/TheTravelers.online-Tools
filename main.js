@@ -844,6 +844,73 @@ var eventStop={
         }
     }
 };
+// freecam
+var freeCam={
+    running:false,
+    speed:1,
+    toggle(){
+        if (this.running==false){
+            this.running=true;
+            this.timer=setInterval(function(){freeCam.run()}, 30);
+            onkeydown=function(key){
+                if(key.key=='w'){
+                    KEYBOOL.w=true;
+                }
+                if(key.key=='s'){
+                    KEYBOOL.s=true;
+                }
+                if(key.key=='a'){
+                    KEYBOOL.a=true;
+                }
+                if(key.key=='d'){
+                    KEYBOOL.d=true;
+                }
+            };
+            onkeyup=function(key){
+                if(key.key=='w'){
+                    KEYBOOL.w=false;
+                }
+                if(key.key=='s'){
+                    KEYBOOL.s=false;
+                }
+                if(key.key=='a'){
+                    KEYBOOL.a=false;
+                }
+                if(key.key=='d'){
+                    KEYBOOL.d=false;
+                }
+            };
+        }
+        else{this.stop();}
+        controller.toggelColor('freeCam');
+    },
+    run(){
+        changed=false;
+        if(KEYBOOL.w){
+            YOU.y+=this.speed;
+            changed=true;
+        }
+        else if(KEYBOOL.s){
+            YOU.y-=this.speed;
+            changed=true;
+        }
+        if(KEYBOOL.a){
+            YOU.x-=this.speed;
+            changed=true;
+        }
+        else if(KEYBOOL.d){
+            YOU.x+=this.speed;
+            changed=true;
+        };
+        if(changed==true){
+            WORLD.build();
+        }
+    },
+    stop(){
+        this.running=false;
+        clearInterval(this.timer);
+    }
+};
 // controller
 var controller={
     runningList:[],
@@ -1000,6 +1067,7 @@ function popupHelp(){// I need the \ so there aren't indentations and it is much
     Location stopper will stop at locations that aren't natural or rare.\
     Use it while travel is running to stop.\
     Check the players box to stop for players.\
+    Free Cam used wasd to move around. You can't manually move while doing this. Free Cam also only shows stuff that is seen on mapexplorer.\
     Map explore uses <a href='https://pfg.pw' target='blank'>Pfg's</a> map explorer.\
       ", undefined);
 };
@@ -1032,13 +1100,17 @@ function init(){
     <div class='complexHr'>
         <span class="header">Utility</span>
     </div>
-    <div id="Utility Hot Bar" style="margin:auto;width:424px;height:62px;">
+    <div id="Utility Hot Bar" style="margin:auto;width:530px;height:62px;">
         <div class="tool toolUnClicked" onclick=" doubleStep.toggle()" id="doubleStep">Auto Double Step</div>
         <div class="tool toolUnClicked" id="eventFind">
             <span onclick=eventStop.toggle() >Location Stopper</span>
             
             <label for='playerStop'>Players</label>
             <input type="checkbox" id='playerStop' onchange="eventStop.updateNewPlayer(this.checked)" style="margin-bottom:0px;">
+        </div>
+        <div class="tool toolUnClicked" id="freeCam">
+            <span onclick=freeCam.toggle() >Free Cam</span>
+            <input type="number" placeholder=1 id="freeCamSpeed" onchange="freeCam.speed=Number(this.value)">
         </div>
         <div class="tool toolUnClicked" onclick=popupMap() >Map Explorer</div>
         <div class="tool toolUnClicked" onclick=popupHelp() id="help">Help</div>
