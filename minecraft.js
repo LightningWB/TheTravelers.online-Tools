@@ -9,4 +9,5 @@ WORLD.TILES.tree = "<img src='https://pfg.pw/mapexplorer/images/tree.png' style=
 WORLD.TILES.water = "<img src='https://pfg.pw/mapexplorer/images/water.gif' style='width:20px;height:20px;'>";
 WORLD.TILES.worldedge = "<img src='https://pfg.pw/mapexplorer/images/worldedge.png' style='width:20px;height:20px;'>";
 WORLD.TILES.traveler = "<img src='https://i.pinimg.com/originals/00/28/6b/00286bddde10d72801fb3a1671d1b292.jpg' style='width:20px;height:20px;'>";
+document.getElementById('world-box').style.lineHeight='0px';
 YOU.char=WORLD.TILES.traveler;WORLD.build();
