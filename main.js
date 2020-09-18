@@ -1,5 +1,5 @@
 // the travelers tools by LightningWB
-// 1.3
+// 1.5.0
 // I am trying to keep all the code in one file so it is easier to setup
 // this is a small spiral loop function that I modified slightly for my use from Neatsu on stack exchange. https://stackoverflow.com/a/46852039 All credit for this goes to him
 // spiral find
@@ -7,7 +7,6 @@ let spiralFind = (x, y, step, count, target, target2=null, target3=null, exempt=
     let distance = 0;
     let range = 1;
     let direction = 'up';
-
     for ( let i = 0; i < count; i++ ) {
         // stuff I added
         if (!doesArrayIncludeArray(exempt,[YOU.x+x,YOU.y+y])){
@@ -59,9 +58,8 @@ var XPBot={
     startXP(){
         XPBot.running=true;
         XPBot.turn="left";
-        this.xPTimer=setInterval(function(){XPBot.afkXP();}, 1000);
     },
-    afkXP(){
+    run(){
         if(this.turn==="left"){
             setDir('w');
             this.turn="right";
@@ -72,7 +70,6 @@ var XPBot={
     },
     stopXP(){
         XPBot.running=false;
-        clearInterval(this.xPTimer);
     },
 };
 //Double step
@@ -88,7 +85,6 @@ var doubleStep={
     },
     startDStep(){
         this.running=true;
-        this.timer=setInterval(function(){doubleStep.run();}, 1010);
     },
     run(){
         if(XP.sp>=10){
@@ -96,52 +92,60 @@ var doubleStep={
         }
     },
     stop(){
-        clearInterval(this.timer);
         this.running=false;
     }
 };
 // metal detector mine bot
 var mineBot={
+    getList:['copper_ore','scrap_metal','steel_shard'],
+    direction:'n',
     startMine(){
         this.running=true;
         this.pos=1;
-        this.direction='e';
-        this.timer=setInterval(function(){mineBot.mine();}, 1100);// increased interval because it kept getting stuck
+        //this.timer=setInterval(function(){mineBot.mine();}, 1100);// increased interval because it kept getting stuck
     },
-    mine(){
-        this.lastMessage=document.getElementById('enginelog-latestmessage');
-        if (this.lastMessage.textContent.includes('the metal detector pings.')){
-            ENGINE.log('mined');
+    run(){
+        lastMessage=document.getElementById('enginelog-latestmessage');
+        if (lastMessage.textContent.includes('the metal detector pings.')){
             SOCKET.send({action: "equipment", option: "dig_with_shovel"});
-            this.nextMove='take all';
         }
-        else if(this.nextMove=='take all'){
-            SOCKET.send({action: "loot_takeall"});
-            SOCKET.send({action: "loot_next"});
-            this.nextMove='move';
+        for(i=0;i<this.getList.length;i++){
+            LOOT.takeItems(this.getList[i],10);
         }
-        else if (this.pos>=1000){// rebound
-            SOCKET.send({action: "event_choice", option: "__leave__"});// stop getting stuck on events
-            this.direction='w';
-            this.pos--;
-            setDir('sw');        }
-        else if(this.pos<=0){
-            SOCKET.send({action: "event_choice", option: "__leave__"});
-            this.direction='e';
-            this.pos++;
-            setDir('se');
-        }
-        else{
-            SOCKET.send({action: "event_choice", option: "__leave__"});
-            setDir(this.direction);
-            if(this.direction=='e'){this.pos++;}
-            else{this.pos--;}
-            this.nextMove='dig';
-        }
+        SOCKET.send({action: "loot_next"});
+        setDir(this.direction);
     },
     endMine(){
-        clearInterval(this.timer);
+        //clearInterval(this.timer);
         this.running=false;
+    },
+    popup(){
+        POPUP.new(
+            'Auto Mine Configure',
+            'Will Get:'+JSON.stringify(this.getList)+'<br><ul><li onclick="mineBot.editGetList(\'copper_ore\');" style="cursor:pointer;">Copper</li><li onclick="mineBot.editGetList(\'scrap_metal\');" style="cursor:pointer;">Scrap</li><li onclick="mineBot.editGetList(\'steel_shard\');" style="cursor:pointer;">Steel</li></ul>\
+            <label for="defaultDir">Direction</label>\
+            <select name="defaultDir" id="defaultDir" style="background:inherit;" onchange="mineBot.direction=this.value">\
+                <option value="n">North</option>\
+                <option value="ne">North-East</option>\
+                <option value="e">East</option>\
+                <option value="se">South-East</option>\
+                <option value="s">South</option>\
+                <option value="sw">South-West</option>\
+                <option value="w">West</option>\
+                <option value="nw">North-West</option>\
+            </select>\
+            ',
+            undefined
+        )
+    },
+    editGetList(item){
+        if(this.getList.includes(item)){
+            this.getList.splice(this.getList.indexOf(item),1);
+        }
+        else{
+            this.getList.push(item);
+        }
+        this.popup();
     }
 };
 // travel
@@ -153,9 +157,9 @@ var travelBot={
         if(!doubleStep.running){
             doubleStep.toggle();
         }
-        this.timer=setInterval(function(){travelBot.travel();}, 1000);
+        //this.timer=setInterval(function(){travelBot.travel();}, 1000);
     },
-    travel(){
+    run(){
         this.xDest=Number(this.xDest);
         this.yDest=Number(this.yDest);
         SOCKET.send({action: "event_choice", option: "__leave__"});
@@ -250,7 +254,7 @@ var travelBot={
         if(doubleStep.running){
             doubleStep.toggle();
         }
-        clearInterval(this.timer);
+        //clearInterval(this.timer);
     },
     changeDestinationX(x){
         this.xDest=x;
@@ -293,9 +297,9 @@ var treeBot={
     start(){
         this.running=true;
         this.defaultDir=document.getElementById('treeDefaultDir').value;
-        this.timer=setInterval(function(){treeBot.tree()}, 1000);
+        //this.timer=setInterval(function(){treeBot.tree()}, 1000);
     },
-    tree(){
+    run(){
         SOCKET.send({action: "event_choice", option: "__leave__"});
         INT.leaveInit();
         if(this.nextMove==='collect'){
@@ -329,7 +333,7 @@ var treeBot={
         }
     },
     stop(){
-        clearInterval(this.timer);
+        //clearInterval(this.timer);
         this.running=false;
         this.nextMove='travel'
     },
@@ -373,8 +377,9 @@ var treeBot={
 };
 // Auto city and house
 var autoLoot={
-    getUMF:false,
+    getUMF:true,
     exemptList:[],
+    getList:[],
     beenThroughHazDoor:false,
     doneTreasuryDesk:false,
     doneTreasuryWoodCloset:false,
@@ -387,10 +392,9 @@ var autoLoot={
     defaultDir:'e',
     start(){
         this.running=true;
-        this.defaultDir=document.getElementById('defaultDir').value
-        this.timer=setInterval(function(){autoLoot.raid()}, 1200);// I am doing 1.2 seconds because some cycles take longer and getting stuck in events is annoying. It will be slightly slower but less prone to getting stuck
+        //this.timer=setInterval(function(){autoLoot.raid()}, 1200);// I am doing 1.2 seconds because some cycles take longer and getting stuck in events is annoying. It will be slightly slower but less prone to getting stuck
     },
-    raid(){
+    run(){
         if(this.nextMove=='steal'){
             if (POPUP.isOpen==true||LOOT.mainEl.style.display==''){// stops if there is a little lag
                 if(POPUP.evTitle.innerHTML=='a desolate city'){// cities
@@ -453,11 +457,21 @@ var autoLoot={
             }
         }
         else if(this.nextMove==='collect'){
+            this.exemptList.push([this.targetX+YOU.x,this.targetY+YOU.y]);
             if(this.goto(this.targetX,this.targetY)=='there'){
                 this.nextMove='steal';
-                this.exemptList.push([this.targetX+YOU.x,this.targetY+YOU.y]);
-                this.targetX=this.prevCoords.x-YOU.x;
-                this.targetY=this.prevCoords.y-YOU.y;
+                if(this.defaultDir=='n'||this.defaultDir=='s'){// this should make sure you don't get stuck as much
+                    this.targetX=this.prevCoords.x-YOU.x;
+                    this.targetY=0;
+                }
+                else if(this.defaultDir=='e'||this.defaultDir=='w'){
+                    this.targetX=0;
+                    this.targetY=this.prevCoords.y-YOU.y;
+                }
+                else{
+                    this.targetX=this.prevCoords.x-YOU.x;
+                    this.targetY=this.prevCoords.y-YOU.y;
+                }
             }
         }
         else if (this.nextMove=='move'){
@@ -467,7 +481,7 @@ var autoLoot={
             this.goto(this.targetX, this.targetY)
         }
         else{
-            spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H', exempt=this.exemptList);
+            spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H',target3='WOW', exempt=this.exemptList);// i guess all previous defaults need to be defined
             if (spiralResults.found===true){
                 if(doubleStep.running){
                     doubleStep.toggle();
@@ -490,7 +504,7 @@ var autoLoot={
         }
     },
     stop(){
-        clearInterval(this.timer);
+        //clearInterval(this.timer);
         this.running=false;
         if(doubleStep.running){
             doubleStep.toggle();
@@ -736,7 +750,9 @@ var autoLoot={
     },
     lootAll(name){
         if(name==LOOT.titleEl.innerHTML){
-            SOCKET.send({action: "loot_takeall"});
+            for(i=0;i<this.getList.length;i++){
+                LOOT.takeItems(this.getList[i],10);// no one needs copper coils
+            }
             SOCKET.send({action: "loot_next"});
             return true;
         }
@@ -759,23 +775,155 @@ var autoLoot={
 
         }
     },
-    changeUMF(){
+    /*changeUMF(){
         if (document.getElementById('UMF').checked===true){
             this.getUMF=true;
         }
         else{
             this.getUMF=false
         }
+    },*/
+    // checkItem wasn't even used
+    popup(){
+        POPUP.new(
+            'City/House Raider Configuration',// if I don't put \ at the end of lines then there are line breaks everywhere
+            'Will Get:'+JSON.stringify(this.getList.sort())+'<hr>'+`\
+            <h3 style="margin-top:0px;margin-bottom:0px;">Item Configuration</h3>\
+            <ul>`+
+            this.toggleButton('axe')+
+            this.toggleButton('baseball_bat')+
+            this.toggleButton('blow_torch')+
+            this.toggleButton('bolt_cutters')+
+            this.toggleButton('bp_low_teleporter')+
+            this.toggleButton('bp_metal_detector')+
+            this.toggleButton('bp_reality_anchor')+
+            this.toggleButton('bullet')+
+            this.toggleButton('circuit_board')+
+            this.toggleButton('cloth')+
+            this.toggleButton('copper_coil')+
+            this.toggleButton('crowbar')+
+            this.toggleButton('battery',displayName='energy cell')+
+            this.toggleButton('fire_extinguisher')+
+            this.toggleButton('machete')+
+            this.toggleButton('maintnence_key')+
+            this.toggleButton('pistol')+
+            this.toggleButton('plastic')+
+            this.toggleButton('rope')+
+            this.toggleButton('rusty_knife')+
+            this.toggleButton('scrap_metal')+
+            this.toggleButton('shotgun_shell')+
+            this.toggleButton('shovel')+
+            this.toggleButton('soda_bottle')+// thanks for taking the time to read through my code. BOAT GANG
+            this.toggleButton('steel_shard')+
+            this.toggleButton('syringe')+
+            this.toggleButton('alien_fragment',displayName='unknown material fragment')+
+            this.toggleButton('wire')+
+            this.toggleButton('wood_stick')+
+            `</ul>\
+            <hr>\
+            <h3 style="margin-top:0px;margin-bottom:0px;">Other Configuration</h3>\
+            <label for="defaultDir">Direction</label>\
+            <select name="defaultDir" id="defaultDir" style="background:inherit;" onchange="autoLoot.defaultDir=this.value">\
+                <option value="n">North</option>\
+                <option value="e">East</option>\
+                <option value="s">South</option>\
+                <option value="w">West</option>\
+            </select>\
+            `,
+            undefined
+        );
+        document.getElementById('event-desc').style.maxHeight='650px';
     },
-    checkItem(item){
-        if (SUPPLIES.current.hasOwnProperty(item)){
-            return true;
+    toggleButton(ID, displayName=null){
+        if(displayName!=null){
+            return '<li style="cursor:pointer;" onclick="autoLoot.editGetList(\''+ID+'\')">'+displayName+'</li>'
+        }
+        return '<li style="cursor:pointer;" onclick="autoLoot.editGetList(this.innerHTML)">'+ID+'</li>'
+    },
+    editGetList(item){
+        if(this.getList.includes(item)){
+            this.getList.splice(this.getList.indexOf(item),1);
         }
         else{
-            return false;
+            this.getList.push(item);
         }
+        this.popup();
     }
 }
+// waypoint travel
+var wayPointTravel={
+    wayPointList:[],// format is [[x,y],[x,y]]
+    start(){
+        this.running=true;
+        //this.timer=setInterval(function(){wayPointTravel.run();},1000);
+        if(!doubleStep.running){
+            doubleStep.toggle();
+        }
+    },
+    run(){
+        if(this.wayPointList.length==0){controller.toggle('wayPointTravel');}
+        else{
+            direction=this.getDir(this.wayPointList[0][0],this.wayPointList[0][1]);
+            if(direction==''){
+                if(this.wayPointList.length>0){
+                    this.wayPointList.shift();
+                }
+            }
+            else{
+                setDir(direction);
+            }
+            SOCKET.send({action: "event_choice", option: "__leave__"});
+        }
+    },
+    stop(){
+        this.running=false;
+        //clearInterval(this.timer);
+        if(doubleStep.running){
+            doubleStep.toggle();
+        }
+    },
+    addPoints(){
+        x=Number(document.getElementById('waypointX').value);
+        y=Number(document.getElementById('waypointY').value);
+        this.wayPointList.push([x,y]);
+        this.popup();
+    },
+    getDir(targetX,targetY){
+        if (targetY>YOU.y){// north south
+            travelDir='n';
+        }
+        else if (targetY<YOU.y){
+            travelDir='s';
+        }
+        else{
+            travelDir='';
+        }
+        if (targetX>YOU.x){// east west
+            travelDir=travelDir+'e';
+        }
+        else if (targetX<YOU.x){
+            travelDir=travelDir+'w';
+        }
+        else{
+            travelDir=travelDir+'';
+        }
+        return travelDir;
+    },
+    popup(){
+        POPUP.new(
+            'Waypoint Travel',
+            JSON.stringify(wayPointTravel.wayPointList).replace('[[','[').replace(']]',']')+`<hr><div style="border:1px solid black;text-align:center;height:20px;">\
+                    <input type="number" id="waypointX" placeholder="X" style="width:80px;">\
+                    <input type="number" id="waypointY" placeholder="Y" style="width:80px;">\
+                    <span style="border:1px solid black;width:50px;cursor:pointer;" onclick="wayPointTravel.addPoints()">Add to List</span>\
+                </div>
+                <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="localStorage.setItem('waypoints',JSON.stringify(wayPointTravel.wayPointList));wayPointTravel.popup();">Load to local storage</div>\
+                <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="wayPointTravel.wayPointList=JSON.parse(localStorage.getItem('waypoints'));wayPointTravel.popup();">Load from local storage</div>\
+                <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="wayPointTravel.wayPointList=[];wayPointTravel.popup();">Delete All</div>`,
+            undefined
+        );
+    }
+};
 //auto Reconnect
 var autoReconnect={
     running:false,
@@ -815,7 +963,7 @@ var eventStop={
     toggle(){
         if (this.running==false){
             this.running=true;
-            this.timer=setInterval(function(){eventStop.run()}, 1000);
+            //this.timer=setInterval(function(){eventStop.run()}, 1000);
         }
         else{this.stop()}
         controller.toggelColor('eventFind')
@@ -833,7 +981,7 @@ var eventStop={
     },
     stop(){
         this.running=false;
-        clearInterval(this.timer);
+        //clearInterval(this.timer);
     },
     updateNewPlayer(value){
         if(value==true){
@@ -848,10 +996,22 @@ var eventStop={
 var freeCam={
     running:false,
     speed:1,
+    prevX:YOU.x,
+    prevY:YOU.y,
+    x:YOU.x,
+    y:YOU.y,
     toggle(){
         if (this.running==false){
             this.running=true;
             this.timer=setInterval(function(){freeCam.run()}, 30);
+            this.prevX=YOU.x;
+            this.prevY=YOU.y;
+            if(document.getElementById('freeCamX').value!=''){
+                YOU.x=Number(document.getElementById('freeCamX').value)
+            }
+            if(document.getElementById('freeCamY').value!=''){
+                YOU.y=Number(document.getElementById('freeCamY').value)
+            }
             onkeydown=function(key){
                 if(key.key=='w'){
                     KEYBOOL.w=true;
@@ -880,6 +1040,7 @@ var freeCam={
                     KEYBOOL.d=false;
                 }
             };
+            WORLD.build();
         }
         else{this.stop();}
         controller.toggelColor('freeCam');
@@ -909,6 +1070,26 @@ var freeCam={
     stop(){
         this.running=false;
         clearInterval(this.timer);
+        YOU.x=this.prevX;
+        YOU.y=this.prevY;
+        WORLD.build();
+    }
+};
+var cycleAligner={
+    modules:[doubleStep,XPBot,mineBot,travelBot,treeBot,autoLoot,wayPointTravel,eventStop,],
+    initialize(){
+        ENGINE.addCycleTrigger('cycleAligner.checkRunning()');
+    },
+    checkRunning(){
+        setTimeout(function(){cycleAligner.checkAll();},400)// .4 seconds after the cycle starts it will queue it back in. if each cycle takes more than .4 seconds then you need an upgrade
+    },
+    checkAll(){
+        ENGINE.addCycleTrigger('cycleAligner.checkRunning();');
+        for(let i=0;i<cycleAligner.modules.length;i++){
+            if(cycleAligner.modules[i].running){
+                cycleAligner.modules[i].run();
+            }
+        }
     }
 };
 // controller
@@ -939,6 +1120,12 @@ var controller={
         else if(job=='autoLoot'){
             autoLoot.start();
         }
+        else if(job=='bigXP'){
+            bigXPBot.start();
+        }
+        else if(job=='wayPointTravel'){
+            wayPointTravel.start();
+        }
         this.runningList.push(job);
     },
     // stops
@@ -960,6 +1147,12 @@ var controller={
         }
         else if(job=='autoLoot'){
             autoLoot.stop();
+        }
+        else if(job=='bigXP'){
+            bigXPBot.stop();
+        }
+        else if(job=='wayPointTravel'){
+            wayPointTravel.stop();
         }
         this.runningList.splice(this.runningList.indexOf(job), 1);// clears list
     },
@@ -1013,6 +1206,22 @@ var controller={
                 this.start('autoLoot');
             }
         }
+        else if(job=='bigXP'){// bigXP
+            if (bigXPBot.running==true){
+                this.stop('bigXP');
+            }
+            else{
+                this.start('bigXP');
+            }
+        }
+        else if(job=='wayPointTravel'){// bigXP
+            if (wayPointTravel.running==true){
+                this.stop('wayPointTravel');
+            }
+            else{
+                this.start('wayPointTravel');
+            }
+        }
         else{
             window.alert('Error: Job not found');
         }
@@ -1026,6 +1235,10 @@ var controller={
                 document.getElementById('travel').children[0].classList.remove('toolUnClicked');
                 document.getElementById('travel').children[0].classList.add('toolClicked');
             }
+            if (id=='bigXP'){// same as travel
+                document.getElementById('bigXP').children[0].classList.remove('toolUnClicked');
+                document.getElementById('bigXP').children[0].classList.add('toolClicked');
+            }
         }
         else if (document.getElementById(id).classList.contains('toolClicked')){
             document.getElementById(id).classList.add('toolUnClicked');
@@ -1033,6 +1246,10 @@ var controller={
             if (id=='travel'){
                 document.getElementById('travel').children[0].classList.add('toolUnClicked');
                 document.getElementById('travel').children[0].classList.remove('toolClicked');
+            }
+            if (id=='bigXP'){// same as travel
+                document.getElementById('bigXP').children[0].classList.add('toolUnClicked');
+                document.getElementById('bigXP').children[0].classList.remove('toolClicked');
             }
         }
     }
@@ -1054,6 +1271,82 @@ var color={
         }
     }
 };
+var changelog={
+    showChangelog(){
+        POPUP.new(null,this.changes)
+    },
+    changes:
+    `
+    <h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="Changelog_0"></a>Changelog</h1>\
+<hr>\
+<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="150_2"></a>1.5.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="3" data-line-end="4">Added the ability to teleport anywhere with freecam</li>\
+<li class="has-line-data" data-line-start="4" data-line-end="5">Made city/house raider not get stuck as often</li>\
+<li class="has-line-data" data-line-start="5" data-line-end="6">Added in a system to alling scripts running to the cycles</li>\
+<li class="has-line-data" data-line-start="6" data-line-end="7">Added in the ability to choose what to mine for in auto mine</li>\
+<li class="has-line-data" data-line-start="7" data-line-end="8">Added the ability to choose what to get from city/house raider</li>\
+<li class="has-line-data" data-line-start="8" data-line-end="9">Added waypoint travel</li>\
+<li class="has-line-data" data-line-start="9" data-line-end="10">Added changelog</li>\
+</ul>\
+<h2 class="code-line" data-line-start=10 data-line-end=11 ><a id="140_10"></a>1.4.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="11" data-line-end="12">Added freecam</li>\
+</ul>\
+<h2 class="code-line" data-line-start=12 data-line-end=13 ><a id="130_12"></a>1.3.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="13" data-line-end="14">Reworked UI</li>\
+<li class="has-line-data" data-line-start="14" data-line-end="15">Added a location stopper</li>\
+<li class="has-line-data" data-line-start="15" data-line-end="16">Added map explorer</li>\
+<li class="has-line-data" data-line-start="16" data-line-end="17">Hid auto reconnect from the ui because the exploit is used got patched</li>\
+</ul>\
+<h2 class="code-line" data-line-start=17 data-line-end=18 ><a id="123_17"></a>1.2.3</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="18" data-line-end="19">Fixed css with toggling dark mode</li>\
+</ul>\
+<h2 class="code-line" data-line-start=19 data-line-end=20 ><a id="122_19"></a>1.2.2</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="20" data-line-end="21">Made auto loot look better</li>\
+</ul>\
+<h2 class="code-line" data-line-start=21 data-line-end=22 ><a id="121_21"></a>1.2.1</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="22" data-line-end="23">Added direction changer to city/house raider</li>\
+<li class="has-line-data" data-line-start="23" data-line-end="24">Improved auto reconnect detection</li>\
+</ul>\
+<h2 class="code-line" data-line-start=24 data-line-end=25 ><a id="120_24"></a>1.2.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="25" data-line-end="26">Added city/house raider</li>\
+</ul>\
+<h2 class="code-line" data-line-start=26 data-line-end=27 ><a id="110_26"></a>1.1.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="27" data-line-end="28">Added tree mower</li>\
+<li class="has-line-data" data-line-start="28" data-line-end="29">Added auto reconnect</li>\
+</ul>\
+<h2 class="code-line" data-line-start=29 data-line-end=30 ><a id="101_29"></a>1.0.1</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="30" data-line-end="31">Auto travel won’t get stuck on events anymore</li>\
+</ul>\
+<h2 class="code-line" data-line-start=31 data-line-end=32 ><a id="100_31"></a>1.0.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="32" data-line-end="33">Added auto travel</li>\
+<li class="has-line-data" data-line-start="33" data-line-end="34">Added a help menu</li>\
+</ul>\
+<h2 class="code-line" data-line-start=34 data-line-end=35 ><a id="021_34"></a>0.2.1</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="35" data-line-end="36">Removed dome debug code</li>\
+<li class="has-line-data" data-line-start="36" data-line-end="37">Made auto mine more clear that you need a metal detector</li>\
+</ul>\
+<h2 class="code-line" data-line-start=37 data-line-end=38 ><a id="020_37"></a>0.2.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="38" data-line-end="39">Added auto mine</li>\
+</ul>\
+<h2 class="code-line" data-line-start=39 data-line-end=40 ><a id="010_39"></a>0.1.0</h2>\
+<ul>\
+<li class="has-line-data" data-line-start="40" data-line-end="41">Added auto XP</li>\
+<li class="has-line-data" data-line-start="41" data-line-end="42">Added auto doublestep</li>\
+</ul>\
+`
+}
 // help popup
 function popupHelp(){// I need the \ so there aren't indentations and it is much more readable
     POPUP.new('Help', "\
@@ -1062,13 +1355,15 @@ function popupHelp(){// I need the \ so there aren't indentations and it is much
     Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel.\
     Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable.\
     If you don't have a boat equiped you may get stuck. Tree mower will auto farm trees.\
-    Dir for city and house raider will change the direction it will go when looking for houses.\
     I am aware that auto city and house raider will miss some loot.\
     Location stopper will stop at locations that aren't natural or rare.\
     Use it while travel is running to stop.\
     Check the players box to stop for players.\
     Free Cam used wasd to move around. You can't manually move while doing this. Free Cam also only shows stuff that is seen on mapexplorer.\
+    The coord input on freecam let you go directly to coords. Ex. 0,0.\
     Map explore uses <a href='https://pfg.pw' target='blank'>Pfg's</a> map explorer.\
+    Waypoint travel will go to the first waypoint then the second and so on. Recommended to navigate around oceans.\
+    You can save waypoints to local storage and load them from there. Local storage is shared across the current browser and will stay if you reload.\
       ", undefined);
 };
 // mapexplorer popup
@@ -1100,7 +1395,7 @@ function init(){
     <div class='complexHr'>
         <span class="header">Utility</span>
     </div>
-    <div id="Utility Hot Bar" style="margin:auto;width:530px;height:62px;">
+    <div id="Utility Hot Bar" style="margin:auto;width:636px;height:62px;">
         <div class="tool toolUnClicked" onclick=" doubleStep.toggle()" id="doubleStep">Auto Double Step</div>
         <div class="tool toolUnClicked" id="eventFind">
             <span onclick=eventStop.toggle() >Location Stopper</span>
@@ -1108,18 +1403,23 @@ function init(){
             <label for='playerStop'>Players</label>
             <input type="checkbox" id='playerStop' onchange="eventStop.updateNewPlayer(this.checked)" style="margin-bottom:0px;">
         </div>
+        `+
+        `
         <div class="tool toolUnClicked" id="freeCam">
             <span onclick=freeCam.toggle() >Free Cam</span>
             <input type="number" placeholder=1 id="freeCamSpeed" onchange="freeCam.speed=Number(this.value)">
+            <input style="width:35px;" type="number" placeholder="X" id="freeCamX">
+            <input style="width:35px;" type="number" placeholder="Y" id="freeCamY">
         </div>
         <div class="tool toolUnClicked" onclick=popupMap() >Map Explorer</div>
+        <div class="tool toolUnClicked" onclick=changelog.showChangelog() id="help">Changelog</div>
         <div class="tool toolUnClicked" onclick=popupHelp() id="help">Help</div>
     </div>`+
    `
    <div class='complexHr'>
             <span class="header">Bots</span>
     </div>
-   <div id="Tool Hot Bar" style="margin:auto;width:530px;height:62px;">
+   <div id="Tool Hot Bar" style="margin:auto;width:636px;height:62px;">
         <style>
         .tool{
             margin:2px 2px;
@@ -1157,7 +1457,10 @@ function init(){
         }
         </style>
         <div class="tool toolUnClicked" onclick=controller.toggle("xp") id="xp">Auto Xp</div>
-        <div class="tool toolUnClicked" onclick=controller.toggle("dig") id="dig">Auto Mine with Metal Detector</div>
+        <div class="tool toolUnClicked" id="dig">
+            <span onclick=controller.toggle("dig")>Auto Mine</span>
+            <span onclick="mineBot.popup();" style="border:1px solid black;">Configure</span>
+        </div>
         <div class="tool toolUnClicked" id="travel">
             <div onclick=controller.toggle("travel")>Travel</div>
             <input type="number" id="x" placeholder="X" onchange="travelBot.changeDestinationX(this.value)" style="width:88px">
@@ -1177,15 +1480,11 @@ function init(){
         </div>
         <div class="tool toolUnClicked" id="autoLoot">
             <span onclick=controller.toggle('autoLoot') >C/H Raider</span>
-            <label for='UMF'>Get UMF</label>
-            <input type="checkbox" id='UMF' onchange="autoLoot.changeUMF()" style="margin-bottom:0px;">
-            <label for="defaultDir">Dir</label>
-            <select name="defaultDir" id="defaultDir" style="background:inherit;">
-                <option value="n">North</option>
-                <option value="e">East</option>
-                <option value="s">South</option>
-                <option value="w">West</option>
-            </select>
+            <span onclick="autoLoot.popup();" style="border:1px solid black;">Configure</span>
+        </div>
+        <div class="tool toolUnClicked" id="wayPointTravel">
+            <span onclick=controller.toggle("wayPointTravel")>Waypoint Travel</span>
+            <span onclick="wayPointTravel.popup();" style="border:1px solid black;">Configure</span>
         </div>
     </div><br>`
         /*<div class="tool toolUnClicked" onclick=autoReconnect.toggle() id="reconnect">Auto Reconnect</div>*/ // auto reconnect was removed in 1.0.4 R.I.P.
@@ -1194,5 +1493,6 @@ function init(){
     target.appendChild(insertedHTML);
     EQUIP.menuEl.style.width="420px";
     BUILD.boxEl.style.width="420px";
+    cycleAligner.initialize();
 }
 init();
