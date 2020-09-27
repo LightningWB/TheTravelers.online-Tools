@@ -1,5 +1,9 @@
 # Changelog
 *** 
+## 1.5.1
+* Added a bookmarklet
+* Added in diagonals to event raider
+* Now you can enter waypoints as a list
 ## 1.5.0
 * Added the ability to teleport anywhere with freecam
 * Made city/house raider not get stuck as often

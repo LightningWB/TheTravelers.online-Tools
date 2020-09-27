@@ -1,9 +1,13 @@
 // the travelers tools by LightningWB
-// 1.5.0
+// 1.5.1
 // I am trying to keep all the code in one file so it is easier to setup
+if(globalThis.LightningClientIniialized){// you can't pile up hotbar after hotbar now
+    alert('You can only inject once')
+    throw 'Already injected';
+}
 // this is a small spiral loop function that I modified slightly for my use from Neatsu on stack exchange. https://stackoverflow.com/a/46852039 All credit for this goes to him
 // spiral find
-let spiralFind = (x, y, step, count, target, target2=null, target3=null, exempt=[]) => {
+globalThis.spiralFind = (x, y, step, count, target, target2=null, target3=null, exempt=[]) => {
     let distance = 0;
     let range = 1;
     let direction = 'up';
@@ -54,7 +58,7 @@ let spiralFind = (x, y, step, count, target, target2=null, target3=null, exempt=
     return {found:false, relX:null, relY:null};
 };
 //Xp
-var XPBot={
+globalThis.XPBot={
     startXP(){
         XPBot.running=true;
         XPBot.turn="left";
@@ -73,7 +77,7 @@ var XPBot={
     },
 };
 //Double step
-var doubleStep={
+globalThis.doubleStep={
     toggle(){
         if(this.running){
             this.stop();
@@ -96,7 +100,7 @@ var doubleStep={
     }
 };
 // metal detector mine bot
-var mineBot={
+globalThis.mineBot={
     getList:['copper_ore','scrap_metal','steel_shard'],
     direction:'n',
     startMine(){
@@ -111,6 +115,9 @@ var mineBot={
         }
         for(i=0;i<this.getList.length;i++){
             LOOT.takeItems(this.getList[i],10);
+        }
+        if(YOU.currentTile=='H'||YOU.currentTile=='C'){
+            SOCKET.send({'action':'event_choice','option':'__leave__'});
         }
         SOCKET.send({action: "loot_next"});
         setDir(this.direction);
@@ -149,7 +156,7 @@ var mineBot={
     }
 };
 // travel
-var travelBot={
+globalThis.travelBot={
     xDest:YOU.x,
     yDest:YOU.y,
     start(){
@@ -293,7 +300,7 @@ var travelBot={
     }
 };
 // tree farmer
-var treeBot={
+globalThis.treeBot={
     start(){
         this.running=true;
         this.defaultDir=document.getElementById('treeDefaultDir').value;
@@ -376,7 +383,7 @@ var treeBot={
     }
 };
 // Auto city and house
-var autoLoot={
+globalThis.autoLoot={
     getUMF:true,
     exemptList:[],
     getList:[],
@@ -481,7 +488,7 @@ var autoLoot={
             this.goto(this.targetX, this.targetY)
         }
         else{
-            spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H',target3='WOW', exempt=this.exemptList);// i guess all previous defaults need to be defined
+            spiralResults=spiralFind(0, 0, 1, 961, WORLD.TILES.city, target2=WORLD.TILES.house,target3='WOW', exempt=this.exemptList);// i guess all previous defaults need to be defined
             if (spiralResults.found===true){
                 if(doubleStep.running){
                     doubleStep.toggle();
@@ -825,9 +832,13 @@ var autoLoot={
             <label for="defaultDir">Direction</label>\
             <select name="defaultDir" id="defaultDir" style="background:inherit;" onchange="autoLoot.defaultDir=this.value">\
                 <option value="n">North</option>\
+                <option value="ne">North-East</option>\
                 <option value="e">East</option>\
+                <option value="se">South-East</option>\
                 <option value="s">South</option>\
+                <option value="sw">South-West</option>\
                 <option value="w">West</option>\
+                <option value="nw">North-West</option>\
             </select>\
             `,
             undefined
@@ -851,7 +862,7 @@ var autoLoot={
     }
 }
 // waypoint travel
-var wayPointTravel={
+globalThis.wayPointTravel={
     wayPointList:[],// format is [[x,y],[x,y]]
     start(){
         this.running=true;
@@ -916,7 +927,9 @@ var wayPointTravel={
                     <input type="number" id="waypointX" placeholder="X" style="width:80px;">\
                     <input type="number" id="waypointY" placeholder="Y" style="width:80px;">\
                     <span style="border:1px solid black;width:50px;cursor:pointer;" onclick="wayPointTravel.addPoints()">Add to List</span>\
-                </div>
+                </div>\
+                <input type="text" style="width:600px;" id="wayPointJSON">\
+                <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="wayPointTravel.wayPointList=JSON.parse('['+document.getElementById('wayPointJSON').value+']');wayPointTravel.popup();">Set data to waypoints</div>\
                 <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="localStorage.setItem('waypoints',JSON.stringify(wayPointTravel.wayPointList));wayPointTravel.popup();">Load to local storage</div>\
                 <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="wayPointTravel.wayPointList=JSON.parse(localStorage.getItem('waypoints'));wayPointTravel.popup();">Load from local storage</div>\
                 <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="wayPointTravel.wayPointList=[];wayPointTravel.popup();">Delete All</div>`,
@@ -925,7 +938,7 @@ var wayPointTravel={
     }
 };
 //auto Reconnect
-var autoReconnect={
+globalThis.autoReconnect={
     running:false,
     toggle(){
         if (this.running==false){
@@ -956,7 +969,7 @@ var autoReconnect={
     }
 }
 // event stopper
-var eventStop={
+globalThis.eventStop={
     running:false,
     knownList:['&nbsp;', ',', 't','w','M','H','C','<b>&amp;</b>','.','~','T','<b><b>&amp;</b></b>','&amp;'],
     newList:[],
@@ -975,7 +988,7 @@ var eventStop={
                 this.newList.push(tile)
                 NOTIF.new('NEW LOCATION',1000);
                 this.toggle();
-                controller.toggle('travel');
+                stopTravels();
             }
         }
     },
@@ -993,7 +1006,7 @@ var eventStop={
     }
 };
 // freecam
-var freeCam={
+globalThis.freeCam={
     running:false,
     speed:1,
     prevX:YOU.x,
@@ -1075,8 +1088,9 @@ var freeCam={
         WORLD.build();
     }
 };
-var cycleAligner={
-    modules:[doubleStep,XPBot,mineBot,travelBot,treeBot,autoLoot,wayPointTravel,eventStop,],
+// greater efficiency
+globalThis.cycleAligner={
+    modules:[doubleStep,XPBot,mineBot,travelBot,treeBot,autoLoot,wayPointTravel,eventStop],
     initialize(){
         ENGINE.addCycleTrigger('cycleAligner.checkRunning()');
     },
@@ -1093,7 +1107,7 @@ var cycleAligner={
     }
 };
 // controller
-var controller={
+globalThis.controller={
     runningList:[],
     // starts
     start(job){
@@ -1255,7 +1269,7 @@ var controller={
     }
 };
 // color
-var color={
+globalThis.color={
     getColor(){
         if (SETTINGS.darkmode=='true'){
             this.textColor='rgb(255, 255, 255)';//white
@@ -1271,84 +1285,90 @@ var color={
         }
     }
 };
-var changelog={
+globalThis.changelog={
     showChangelog(){
-        POPUP.new(null,this.changes)
+        POPUP.new(null,this.changes.replaceAll('\n',''))// no longer have to add in \
     },
     changes:
     `
-    <h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="Changelog_0"></a>Changelog</h1>\
-<hr>\
-<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="150_2"></a>1.5.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="3" data-line-end="4">Added the ability to teleport anywhere with freecam</li>\
-<li class="has-line-data" data-line-start="4" data-line-end="5">Made city/house raider not get stuck as often</li>\
-<li class="has-line-data" data-line-start="5" data-line-end="6">Added in a system to alling scripts running to the cycles</li>\
-<li class="has-line-data" data-line-start="6" data-line-end="7">Added in the ability to choose what to mine for in auto mine</li>\
-<li class="has-line-data" data-line-start="7" data-line-end="8">Added the ability to choose what to get from city/house raider</li>\
-<li class="has-line-data" data-line-start="8" data-line-end="9">Added waypoint travel</li>\
-<li class="has-line-data" data-line-start="9" data-line-end="10">Added changelog</li>\
-</ul>\
-<h2 class="code-line" data-line-start=10 data-line-end=11 ><a id="140_10"></a>1.4.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="11" data-line-end="12">Added freecam</li>\
-</ul>\
-<h2 class="code-line" data-line-start=12 data-line-end=13 ><a id="130_12"></a>1.3.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="13" data-line-end="14">Reworked UI</li>\
-<li class="has-line-data" data-line-start="14" data-line-end="15">Added a location stopper</li>\
-<li class="has-line-data" data-line-start="15" data-line-end="16">Added map explorer</li>\
-<li class="has-line-data" data-line-start="16" data-line-end="17">Hid auto reconnect from the ui because the exploit is used got patched</li>\
-</ul>\
-<h2 class="code-line" data-line-start=17 data-line-end=18 ><a id="123_17"></a>1.2.3</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="18" data-line-end="19">Fixed css with toggling dark mode</li>\
-</ul>\
-<h2 class="code-line" data-line-start=19 data-line-end=20 ><a id="122_19"></a>1.2.2</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="20" data-line-end="21">Made auto loot look better</li>\
-</ul>\
-<h2 class="code-line" data-line-start=21 data-line-end=22 ><a id="121_21"></a>1.2.1</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="22" data-line-end="23">Added direction changer to city/house raider</li>\
-<li class="has-line-data" data-line-start="23" data-line-end="24">Improved auto reconnect detection</li>\
-</ul>\
-<h2 class="code-line" data-line-start=24 data-line-end=25 ><a id="120_24"></a>1.2.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="25" data-line-end="26">Added city/house raider</li>\
-</ul>\
-<h2 class="code-line" data-line-start=26 data-line-end=27 ><a id="110_26"></a>1.1.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="27" data-line-end="28">Added tree mower</li>\
-<li class="has-line-data" data-line-start="28" data-line-end="29">Added auto reconnect</li>\
-</ul>\
-<h2 class="code-line" data-line-start=29 data-line-end=30 ><a id="101_29"></a>1.0.1</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="30" data-line-end="31">Auto travel won’t get stuck on events anymore</li>\
-</ul>\
-<h2 class="code-line" data-line-start=31 data-line-end=32 ><a id="100_31"></a>1.0.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="32" data-line-end="33">Added auto travel</li>\
-<li class="has-line-data" data-line-start="33" data-line-end="34">Added a help menu</li>\
-</ul>\
-<h2 class="code-line" data-line-start=34 data-line-end=35 ><a id="021_34"></a>0.2.1</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="35" data-line-end="36">Removed dome debug code</li>\
-<li class="has-line-data" data-line-start="36" data-line-end="37">Made auto mine more clear that you need a metal detector</li>\
-</ul>\
-<h2 class="code-line" data-line-start=37 data-line-end=38 ><a id="020_37"></a>0.2.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="38" data-line-end="39">Added auto mine</li>\
-</ul>\
-<h2 class="code-line" data-line-start=39 data-line-end=40 ><a id="010_39"></a>0.1.0</h2>\
-<ul>\
-<li class="has-line-data" data-line-start="40" data-line-end="41">Added auto XP</li>\
-<li class="has-line-data" data-line-start="41" data-line-end="42">Added auto doublestep</li>\
-</ul>\
+    <h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="Changelog_0"></a>Changelog</h1>
+<hr>
+<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="151_2"></a>1.5.1</h2>
+<ul>
+<li class="has-line-data" data-line-start="3" data-line-end="4">Added a bookmarklet</li>
+<li class="has-line-data" data-line-start="4" data-line-end="5">Added in diagonals to event raider</li>
+<li class="has-line-data" data-line-start="5" data-line-end="6">Now you can enter waypoints as a list</li>
+</ul>
+<h2 class="code-line" data-line-start=6 data-line-end=7 ><a id="150_6"></a>1.5.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="7" data-line-end="8">Added the ability to teleport anywhere with freecam</li>
+<li class="has-line-data" data-line-start="8" data-line-end="9">Made city/house raider not get stuck as often</li>
+<li class="has-line-data" data-line-start="9" data-line-end="10">Added in a system to alling scripts running to the cycles</li>
+<li class="has-line-data" data-line-start="10" data-line-end="11">Added in the ability to choose what to mine for in auto mine</li>
+<li class="has-line-data" data-line-start="11" data-line-end="12">Added the ability to choose what to get from city/house raider</li>
+<li class="has-line-data" data-line-start="12" data-line-end="13">Added waypoint travel</li>
+<li class="has-line-data" data-line-start="13" data-line-end="14">Added changelog</li>
+</ul>
+<h2 class="code-line" data-line-start=14 data-line-end=15 ><a id="140_14"></a>1.4.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="15" data-line-end="16">Added freecam</li>
+</ul>
+<h2 class="code-line" data-line-start=16 data-line-end=17 ><a id="130_16"></a>1.3.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="17" data-line-end="18">Reworked UI</li>
+<li class="has-line-data" data-line-start="18" data-line-end="19">Added a location stopper</li>
+<li class="has-line-data" data-line-start="19" data-line-end="20">Added map explorer</li>
+<li class="has-line-data" data-line-start="20" data-line-end="21">Hid auto reconnect from the ui because the exploit is used got patched</li>
+</ul>
+<h2 class="code-line" data-line-start=21 data-line-end=22 ><a id="123_21"></a>1.2.3</h2>
+<ul>
+<li class="has-line-data" data-line-start="22" data-line-end="23">Fixed css with toggling dark mode</li>
+</ul>
+<h2 class="code-line" data-line-start=23 data-line-end=24 ><a id="122_23"></a>1.2.2</h2>
+<ul>
+<li class="has-line-data" data-line-start="24" data-line-end="25">Made auto loot look better</li>
+</ul>
+<h2 class="code-line" data-line-start=25 data-line-end=26 ><a id="121_25"></a>1.2.1</h2>
+<ul>
+<li class="has-line-data" data-line-start="26" data-line-end="27">Added direction changer to city/house raider</li>
+<li class="has-line-data" data-line-start="27" data-line-end="28">Improved auto reconnect detection</li>
+</ul>
+<h2 class="code-line" data-line-start=28 data-line-end=29 ><a id="120_28"></a>1.2.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="29" data-line-end="30">Added city/house raider</li>
+</ul>
+<h2 class="code-line" data-line-start=30 data-line-end=31 ><a id="110_30"></a>1.1.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="31" data-line-end="32">Added tree mower</li>
+<li class="has-line-data" data-line-start="32" data-line-end="33">Added auto reconnect</li>
+</ul>
+<h2 class="code-line" data-line-start=33 data-line-end=34 ><a id="101_33"></a>1.0.1</h2>
+<ul>
+<li class="has-line-data" data-line-start="34" data-line-end="35">Auto travel won’t get stuck on events anymore</li>
+</ul>
+<h2 class="code-line" data-line-start=35 data-line-end=36 ><a id="100_35"></a>1.0.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="36" data-line-end="37">Added auto travel</li>
+<li class="has-line-data" data-line-start="37" data-line-end="38">Added a help menu</li>
+</ul>
+<h2 class="code-line" data-line-start=38 data-line-end=39 ><a id="021_38"></a>0.2.1</h2>
+<ul>
+<li class="has-line-data" data-line-start="39" data-line-end="40">Removed dome debug code</li>
+<li class="has-line-data" data-line-start="40" data-line-end="41">Made auto mine more clear that you need a metal detector</li>
+</ul>
+<h2 class="code-line" data-line-start=41 data-line-end=42 ><a id="020_41"></a>0.2.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="42" data-line-end="43">Added auto mine</li>
+</ul>
+<h2 class="code-line" data-line-start=43 data-line-end=44 ><a id="010_43"></a>0.1.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="44" data-line-end="45">Added auto XP</li>
+<li class="has-line-data" data-line-start="45" data-line-end="46">Added auto doublestep</li>
+</ul>
 `
 }
 // help popup
-function popupHelp(){// I need the \ so there aren't indentations and it is much more readable
+globalThis.popupHelp=function(){// I need the \ so there aren't indentations and it is much more readable
     POPUP.new('Help', "\
     Auto Xp will walk back and forth.\
     Auto double step will automaticly double step.\
@@ -1367,14 +1387,14 @@ function popupHelp(){// I need the \ so there aren't indentations and it is much
       ", undefined);
 };
 // mapexplorer popup
-function popupMap(){
+globalThis.popupMap=function(){
     POPUP.new('<a href="https://pfg.pw" target="_blank">MapExplorer by pfg</a>',
     '<iframe src="https://pfg.pw/mapexplorer/" width=640 height=640 class="embed-responsive-item">',
     undefined);
     document.getElementById('event-desc').style.maxHeight='650px';
     POPUP.evBox.style.maxHeight="900px"
 };
-function doesArrayIncludeArray(array1,array2){//js doesnt compare arrays well
+globalThis.doesArrayIncludeArray=function(array1,array2){//js doesnt compare arrays well
     for(i=0;i<array1.length;i++){
         if(array1[i].join('')==array2.join('')){
             return true;
@@ -1382,8 +1402,19 @@ function doesArrayIncludeArray(array1,array2){//js doesnt compare arrays well
     }
     return false;
 };
+globalThis.stopTravels=function(){
+    if(travelBot.running){
+        controller.toggle('travel');
+    }
+    if(wayPointTravel.running){
+        controller.toggle('wayPointTravel');
+    }
+    if(YOU.autowalk){
+        setDir(YOU.dir);
+    }
+};
 // new change dir to work with buttons
-function setDir(dir){
+globalThis.setDir=function(dir){
     ENGINE.dir(dir, document.getElementById('arrow-'+dir))
 };
 function init(){
@@ -1403,8 +1434,6 @@ function init(){
             <label for='playerStop'>Players</label>
             <input type="checkbox" id='playerStop' onchange="eventStop.updateNewPlayer(this.checked)" style="margin-bottom:0px;">
         </div>
-        `+
-        `
         <div class="tool toolUnClicked" id="freeCam">
             <span onclick=freeCam.toggle() >Free Cam</span>
             <input type="number" placeholder=1 id="freeCamSpeed" onchange="freeCam.speed=Number(this.value)">
@@ -1494,5 +1523,6 @@ function init(){
     EQUIP.menuEl.style.width="420px";
     BUILD.boxEl.style.width="420px";
     cycleAligner.initialize();
+    globalThis.LightningClientIniialized=true;
 }
 init();
