@@ -8,7 +8,10 @@ Paste the contents of main.js into the console, install the extension which is w
 3.   Done.
 ### Extension
 1.   To setup the extension first download the extension folder.
-2.   Navigate to your browsers addon instalation area. Here are the popular ones. [Chrome](chrome://extensions/),[Firefox](about:debugging#/runtime/this-firefox),[Edge](edge://extensions/)
+2.   Navigate to your browsers addon instalation area. Here are the popular ones.
+  - Chrome: chrome://extensions/
+  - Firefox: about:debugging#/runtime/this-firefox
+  - Edge: edge://extensions/
 3.   Either do load unpacked or load temporary addon and select the manifest.json on Firefox or the extension folder on edge and chrome.
 4.   Now when you go to thetravelers.online the client will be there.
 ### Bookmarklet
