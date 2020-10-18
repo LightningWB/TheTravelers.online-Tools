@@ -57,6 +57,11 @@ globalThis.spiralFind = (x, y, step, count, target, target2=null, target3=null, 
     }
     return {found:false, relX:null, relY:null};
 };
+// copy stuff
+globalThis.copyToClipboard = str =>
+{
+    const el = document.createElement('textarea');el.value = str;el.setAttribute('readonly', '');el.style.position = 'absolute';el.style.left = '-9999px';document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);
+};
 //Xp
 globalThis.XPBot={
     startXP(){
@@ -301,14 +306,24 @@ globalThis.travelBot={
 };
 // tree farmer
 globalThis.treeBot={
+    autoMakeWoodFence:false,// secret feature// not anymore
+    defaultDir:'n',
     start(){
         this.running=true;
-        this.defaultDir=document.getElementById('treeDefaultDir').value;
         //this.timer=setInterval(function(){treeBot.tree()}, 1000);
     },
     run(){
         SOCKET.send({action: "event_choice", option: "__leave__"});
         INT.leaveInit();
+        if(this.autoMakeWoodFence==true){
+            if(SUPPLIES.current.wood_stick!=undefined&&SUPPLIES.current.rope!=undefined){
+                if(SUPPLIES.current.wood_stick.count>=20&&SUPPLIES.current.rope.count>=1){
+                    CRAFTING.open('wood_block');
+                    CRAFTING.craft();
+                    CRAFTING.close();
+                }
+            }
+        }
         if(this.nextMove==='collect'){
             HANDS.gettree(document.getElementById('hands-tree'));
             this.nextMove='back';
@@ -380,6 +395,9 @@ globalThis.treeBot={
             setDir(travelDir);
             return'notThere';
         }
+    },
+    updateFence(value){
+        this.autoMakeWoodFence=value;
     }
 };
 // Auto city and house
@@ -794,16 +812,16 @@ globalThis.autoLoot={
     popup(){
         POPUP.new(
             'City/House Raider Configuration',// if I don't put \ at the end of lines then there are line breaks everywhere
-            'Will Get:'+JSON.stringify(this.getList.sort())+'<hr>'+`\
+            `\
             <h3 style="margin-top:0px;margin-bottom:0px;">Item Configuration</h3>\
-            <ul>`+
+            <ul style="height:530px;overflow:scroll;">`+
             this.toggleButton('axe')+
             this.toggleButton('baseball_bat')+
             this.toggleButton('blow_torch')+
             this.toggleButton('bolt_cutters')+
-            this.toggleButton('bp_low_teleporter')+
-            this.toggleButton('bp_metal_detector')+
-            this.toggleButton('bp_reality_anchor')+
+            this.toggleButton('bp_low_teleporter',displayName='low range teleporter blueprint')+
+            this.toggleButton('bp_metal_detector',displayName='metal detector blueprint')+
+            this.toggleButton('bp_reality_anchor',displayName='personal reality anchor blueprint')+
             this.toggleButton('bullet')+
             this.toggleButton('circuit_board')+
             this.toggleButton('cloth')+
@@ -847,9 +865,9 @@ globalThis.autoLoot={
     },
     toggleButton(ID, displayName=null){
         if(displayName!=null){
-            return '<li style="cursor:pointer;" onclick="autoLoot.editGetList(\''+ID+'\')">'+displayName+'</li>'
+            return '<li style="cursor:pointer;" onclick="autoLoot.editGetList(\''+ID+'\')"><input type="checkbox" '+this.inGetList(ID)+' readonly>'+displayName+'</li>'
         }
-        return '<li style="cursor:pointer;" onclick="autoLoot.editGetList(this.innerHTML)">'+ID+'</li>'
+        return '<li style="cursor:pointer;" onclick="autoLoot.editGetList(\''+ID+'\')"><input type="checkbox" '+this.inGetList(ID)+' readonly>'+ID.replaceAll('_',' ')+'</li>'
     },
     editGetList(item){
         if(this.getList.includes(item)){
@@ -859,6 +877,88 @@ globalThis.autoLoot={
             this.getList.push(item);
         }
         this.popup();
+    },
+    inGetList(item){
+        if(this.getList.includes(item)){
+            return 'checked';
+        }
+        else{
+            return'';
+        }
+    }
+}
+// bigXPBot
+globalThis.bigXPBot={
+    exemptList:[],
+    xDest:YOU.x,
+    yDest:YOU.y,
+    getEvents:true,
+    start(){
+        this.running=true;
+        if(!doubleStep.running){
+            doubleStep.toggle();
+        }
+        if(!this.getEvents){interval=1300;}
+        else{interval=1000;}
+        //this.timer=setInterval(function(){bigXPBot.run();}, interval);
+    },
+    run(){
+        found=false;
+        if(this.getEvents){spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H', exempt=this.exemptList);if(spiralResults.found==true){found=true;}}
+        if(found==true){
+            dir=this.getDir(spiralResults.relX+YOU.x, spiralResults.relY+YOU.y);
+        }
+        else{
+            dir=this.getDir(this.xDest,this.yDest);
+        }
+        if(YOU.currentTile=='H' || YOU.currentTile=='C'){
+            if(!this.exemptList.includes([YOU.x,YOU.y])){
+                this.exemptList.push([YOU.x,YOU.y]);
+            }
+            SOCKET.send({action: "event_choice", option: "__leave__"});
+        }
+        if(this.exemptList.length>100){
+            this.exemptList.shift();
+        }
+        if(YOU.x==this.xDest && YOU.y==this.yDest){
+            controller.toggle('bigXP');
+            controller.toggle('xp')
+        }
+        setDir(dir);
+    },
+    stop(){
+        this.running=false;
+        if(doubleStep.running){
+            doubleStep.toggle();
+        }
+        //clearInterval(this.timer);
+    },
+    changeDestinationX(x){
+        this.xDest=Number(x);
+    },
+    changeDestinationY(y){
+        this.yDest=Number(y);
+    },
+    getDir(targetX,targetY){
+        if (targetY>YOU.y){// north south
+            travelDir='n';
+        }
+        else if (targetY<YOU.y){
+            travelDir='s';
+        }
+        else{
+            travelDir='';
+        }
+        if (targetX>YOU.x){// east west
+            travelDir=travelDir+'e';
+        }
+        else if (targetX<YOU.x){
+            travelDir=travelDir+'w';
+        }
+        else{
+            travelDir=travelDir+'';
+        }
+        return travelDir;
     }
 }
 // waypoint travel
@@ -971,7 +1071,8 @@ globalThis.autoReconnect={
 // event stopper
 globalThis.eventStop={
     running:false,
-    knownList:['&nbsp;', ',', 't','w','M','H','C','<b>&amp;</b>','.','~','T','<b><b>&amp;</b></b>','&amp;'],
+    knownList:['&nbsp;', ',', 't','w','M','H','C','<b>&amp;</b>','.','~','T','<b><b>&amp;</b></b>','░'],
+    ignoreList:[],
     newList:[],
     toggle(){
         if (this.running==false){
@@ -984,7 +1085,7 @@ globalThis.eventStop={
     run(){
         for(i=0;i<WORLD.tilemap.length;i++){
             tile=WORLD.tilemap[i].innerHTML
-            if(this.knownList.includes(tile)==false){
+            if(this.knownList.includes(tile)===false||this.ignoreList.includes(tile)===false){
                 this.newList.push(tile)
                 NOTIF.new('NEW LOCATION',1000);
                 this.toggle();
@@ -996,34 +1097,141 @@ globalThis.eventStop={
         this.running=false;
         //clearInterval(this.timer);
     },
-    updateNewPlayer(value){
+    /*updateNewPlayer(value){
         if(value==true){
             this.knownList.pop();
         }
         else{
             this.knownList.push('&amp;');
         }
+    }*/
+    popup(){
+        POPUP.new(
+            'Event Stopper Configuration',
+            'Will Ignore:'+JSON.stringify(this.ignoreList.sort())+'<hr>'+`\
+            <h3 style="margin-top:0px;margin-bottom:0px;">Item Configuration</h3>\
+            <ul>`+
+            this.item('&')+
+            this.item('@')+
+            this.item('u')+
+            this.item('n')+
+            this.item('o')+
+            this.item('+')+
+            this.item('D')+
+            this.item('#')+
+            this.item('<b>D</b>')+
+            this.item('<b>#</b>')+
+            this.item('$')+
+            this.item('┬')+
+            this.item('¶')+
+            this.item('◻')+
+            this.item('▭')+
+            this.item('B')+
+            this.item('_')+
+            this.item('▋')+
+            this.item('<b>S</b>')+
+            this.item('△')+
+            this.item('▢')+
+            this.item('⬓')+
+            this.item('⬟')+
+            this.item('▥')+
+            this.item('◫')+
+            `</ul>`
+        )
+    },
+    item(character){
+        return '<li onclick="eventStop.toggleItem(this.innerText);" style="cursor:pointer;"><input type="checkbox" '+this.inGetList(character)+' readonly>'+character+'</li>'
+    },
+    toggleItem(item){
+        if(this.ignoreList.includes(item)){
+            this.ignoreList.splice(this.ignoreList.indexOf(item),1);
+        }
+        else{
+            this.ignoreList.push(item);
+        }
+        this.popup();
+    },
+    inGetList(item){
+        if(this.ignoreList.includes(item)){
+            return 'checked';
+        }
+        else{
+            return '';
+        }
     }
 };
+// location logger
+globalThis.locationLogger={
+    running:false,
+    markHoles:false,
+    toggle(){
+        if (this.running==false){
+            this.running=true;
+            //this.timer=setInterval(function(){locationLogger.run()}, 1000);
+        }
+        else{this.stop();}
+        controller.toggelColor('locationLogger');
+    },
+    run(){
+        logList=[];
+        data=''
+        data=localStorage.getItem('travelersLocationLogger');
+        if(data!=''&&data!=null){
+            logList=JSON.parse(data);
+        }
+        if(WORLD.otherObjs.length>0){
+            for(i=0;i<WORLD.otherObjs.length;i++){
+                if(JSON.stringify(logList).includes(JSON.stringify({char:WORLD.otherObjs[i].char,X:WORLD.otherObjs[i].x,Y:WORLD.otherObjs[i].y}))==false){
+                    if(WORLD.otherObjs[i].char!='C' && WORLD.otherObjs[i].char!='H'){// visited cities and houses count as objects I guess  ¯\_(ツ)_/¯
+                        if(WORLD.otherObjs[i].char!='o'||this.markHoles==true){
+                            logList.push({char:WORLD.otherObjs[i].char,X:WORLD.otherObjs[i].x,Y:WORLD.otherObjs[i].y});
+                        }
+                    }
+                }
+            }    
+        }
+        for(i=0;i<WORLD.otherPlayers.length;i++){
+            if(JSON.stringify(logList).includes(JSON.stringify({char:'&',X:WORLD.otherPlayers[i].x,Y:WORLD.otherPlayers[i].y}))==false){
+                logList.push({char:'&',X:WORLD.otherPlayers[i].x,Y:WORLD.otherPlayers[i].y});
+            }
+        } 
+        for(i=0;i<WORLD.otherStumps.length;i++){
+            if(JSON.stringify(logList).includes(JSON.stringify({char:'stump',X:WORLD.otherStumps[i].x,Y:WORLD.otherStumps[i].y}))==false){
+                logList.push({char:'stump',X:WORLD.otherStumps[i].x,Y:WORLD.otherStumps[i].y});
+            }
+        } 
+        localStorage.setItem('travelersLocationLogger',JSON.stringify(logList));
+    },
+    stop(){
+        this.running=false;
+        //clearInterval(this.timer);
+    },
+    show(){
+        if(localStorage.getItem('travelersLocationLogger')==null){
+            localStorage.setItem('travelersLocationLogger','');
+        }
+        POPUP.evBox.style.maxHeight="900px";
+        // warning long line of unreabable html
+        POPUP.new('locations','<p style="height:500px;overflow:scroll;">'+localStorage.getItem('travelersLocationLogger').split('},').join('}<br>').replace('[','').replace(']','')+'</p>'+'<hr><div style="cursor:pointer;border:1px solid black;text-align:center;" onclick=copyToClipboard(localStorage.getItem("travelersLocationLogger"));this.innerText="coppied";this.onclick="" >Copy</div><div style="cursor:pointer;border:1px solid black;text-align:center;" onclick=localStorage.removeItem("travelersLocationLogger");POPUP.hide()>Clear Logs</div>',undefined)
+    }
+}
 // freecam
 globalThis.freeCam={
     running:false,
     speed:1,
-    prevX:YOU.x,
-    prevY:YOU.y,
-    x:YOU.x,
-    y:YOU.y,
+    x:0,
+    y:0,
     toggle(){
+        WORLD.build=eval('('+WORLD.build.toString().replace('YOU.x + j','YOU.x + freeCam.x + j').replace('YOU.y - i','YOU.y + freeCam.y - i')+')');// keep moving while freecam
+        YOU.getCoordString=eval('('+YOU.getCoordString.toString().replace(' YOU.x ','(YOU.x+freeCam.x)').replace(' YOU.y;','(YOU.y+freeCam.y);')+')');// display coords
         if (this.running==false){
             this.running=true;
             this.timer=setInterval(function(){freeCam.run()}, 30);
-            this.prevX=YOU.x;
-            this.prevY=YOU.y;
             if(document.getElementById('freeCamX').value!=''){
-                YOU.x=Number(document.getElementById('freeCamX').value)
+                this.x=YOU.x*-1+Number(document.getElementById('freeCamX').value)
             }
             if(document.getElementById('freeCamY').value!=''){
-                YOU.y=Number(document.getElementById('freeCamY').value)
+                this.y=YOU.y*-1+Number(document.getElementById('freeCamY').value)
             }
             onkeydown=function(key){
                 if(key.key=='w'){
@@ -1061,19 +1269,19 @@ globalThis.freeCam={
     run(){
         changed=false;
         if(KEYBOOL.w){
-            YOU.y+=this.speed;
+            this.y+=this.speed;
             changed=true;
         }
         else if(KEYBOOL.s){
-            YOU.y-=this.speed;
+            this.y-=this.speed;
             changed=true;
         }
         if(KEYBOOL.a){
-            YOU.x-=this.speed;
+            this.x-=this.speed;
             changed=true;
         }
         else if(KEYBOOL.d){
-            YOU.x+=this.speed;
+            this.x+=this.speed;
             changed=true;
         };
         if(changed==true){
@@ -1083,14 +1291,14 @@ globalThis.freeCam={
     stop(){
         this.running=false;
         clearInterval(this.timer);
-        YOU.x=this.prevX;
-        YOU.y=this.prevY;
+        this.x=0;
+        this.y=0;
         WORLD.build();
     }
 };
 // greater efficiency
 globalThis.cycleAligner={
-    modules:[doubleStep,XPBot,mineBot,travelBot,treeBot,autoLoot,wayPointTravel,eventStop],
+    modules:[doubleStep,XPBot,mineBot,travelBot,treeBot,autoLoot,bigXPBot,wayPointTravel,eventStop,locationLogger],
     initialize(){
         ENGINE.addCycleTrigger('cycleAligner.checkRunning()');
     },
@@ -1140,6 +1348,9 @@ globalThis.controller={
         else if(job=='wayPointTravel'){
             wayPointTravel.start();
         }
+        else if(job=='patrol'){
+            patrolPvp.start();
+        }
         this.runningList.push(job);
     },
     // stops
@@ -1167,6 +1378,9 @@ globalThis.controller={
         }
         else if(job=='wayPointTravel'){
             wayPointTravel.stop();
+        }
+        else if(job=='patrol'){
+            patrolPvp.stop();
         }
         this.runningList.splice(this.runningList.indexOf(job), 1);// clears list
     },
@@ -1236,6 +1450,14 @@ globalThis.controller={
                 this.start('wayPointTravel');
             }
         }
+        else if(job=='patrol'){
+            if(patrolPvp.running===true){
+                this.stop('patrol');
+            }
+            else{
+                this.start('patrol');
+            }
+        }
         else{
             window.alert('Error: Job not found');
         }
@@ -1293,77 +1515,91 @@ globalThis.changelog={
     `
     <h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="Changelog_0"></a>Changelog</h1>
 <hr>
-<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="151_2"></a>1.5.1</h2>
+<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="200_2"></a>2.0.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="3" data-line-end="4">Added a bookmarklet</li>
-<li class="has-line-data" data-line-start="4" data-line-end="5">Added in diagonals to event raider</li>
-<li class="has-line-data" data-line-start="5" data-line-end="6">Now you can enter waypoints as a list</li>
+<li class="has-line-data" data-line-start="3" data-line-end="4">2.0.0 UPDATE</li>
+<li class="has-line-data" data-line-start="4" data-line-end="5">Browser extension</li>
+<li class="has-line-data" data-line-start="5" data-line-end="6">Mapexplorer now brings you to your current coords</li>
+<li class="has-line-data" data-line-start="6" data-line-end="7">Now you can use freecam while auto walking</li>
+<li class="has-line-data" data-line-start="7" data-line-end="8">Added the ability to configure location stopper to ignore tiles</li>
+<li class="has-line-data" data-line-start="8" data-line-end="9">Now you can enable auto fence crafting in tree mower</li>
+<li class="has-line-data" data-line-start="9" data-line-end="10">Added diagonals to tree bot</li>
+<li class="has-line-data" data-line-start="10" data-line-end="11">Added a Location logger</li>
+<li class="has-line-data" data-line-start="11" data-line-end="12">Added a travel bot to tag events for xp</li>
+<li class="has-line-data" data-line-start="12" data-line-end="13">You can now use this on mobile with bookmarklets</li>
+<li class="has-line-data" data-line-start="13" data-line-end="14">Made event raider ui much more user friendly</li>
 </ul>
-<h2 class="code-line" data-line-start=6 data-line-end=7 ><a id="150_6"></a>1.5.0</h2>
+<h2 class="code-line" data-line-start=14 data-line-end=15 ><a id="151_14"></a>1.5.1</h2>
 <ul>
-<li class="has-line-data" data-line-start="7" data-line-end="8">Added the ability to teleport anywhere with freecam</li>
-<li class="has-line-data" data-line-start="8" data-line-end="9">Made city/house raider not get stuck as often</li>
-<li class="has-line-data" data-line-start="9" data-line-end="10">Added in a system to alling scripts running to the cycles</li>
-<li class="has-line-data" data-line-start="10" data-line-end="11">Added in the ability to choose what to mine for in auto mine</li>
-<li class="has-line-data" data-line-start="11" data-line-end="12">Added the ability to choose what to get from city/house raider</li>
-<li class="has-line-data" data-line-start="12" data-line-end="13">Added waypoint travel</li>
-<li class="has-line-data" data-line-start="13" data-line-end="14">Added changelog</li>
+<li class="has-line-data" data-line-start="15" data-line-end="16">Added a bookmarklet</li>
+<li class="has-line-data" data-line-start="16" data-line-end="17">Added in diagonals to event raider</li>
+<li class="has-line-data" data-line-start="17" data-line-end="18">Now you can enter waypoints as a list</li>
 </ul>
-<h2 class="code-line" data-line-start=14 data-line-end=15 ><a id="140_14"></a>1.4.0</h2>
+<h2 class="code-line" data-line-start=18 data-line-end=19 ><a id="150_18"></a>1.5.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="15" data-line-end="16">Added freecam</li>
+<li class="has-line-data" data-line-start="19" data-line-end="20">Added the ability to teleport anywhere with freecam</li>
+<li class="has-line-data" data-line-start="20" data-line-end="21">Made city/house raider not get stuck as often</li>
+<li class="has-line-data" data-line-start="21" data-line-end="22">Added in a system to alligning scripts running to the cycles</li>
+<li class="has-line-data" data-line-start="22" data-line-end="23">Added in the ability to choose what to mine for in auto mine</li>
+<li class="has-line-data" data-line-start="23" data-line-end="24">Added the ability to choose what to get from city/house raider</li>
+<li class="has-line-data" data-line-start="24" data-line-end="25">Added waypoint travel</li>
+<li class="has-line-data" data-line-start="25" data-line-end="26">Added changelog</li>
 </ul>
-<h2 class="code-line" data-line-start=16 data-line-end=17 ><a id="130_16"></a>1.3.0</h2>
+<h2 class="code-line" data-line-start=26 data-line-end=27 ><a id="140_26"></a>1.4.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="17" data-line-end="18">Reworked UI</li>
-<li class="has-line-data" data-line-start="18" data-line-end="19">Added a location stopper</li>
-<li class="has-line-data" data-line-start="19" data-line-end="20">Added map explorer</li>
-<li class="has-line-data" data-line-start="20" data-line-end="21">Hid auto reconnect from the ui because the exploit is used got patched</li>
+<li class="has-line-data" data-line-start="27" data-line-end="28">Added freecam</li>
 </ul>
-<h2 class="code-line" data-line-start=21 data-line-end=22 ><a id="123_21"></a>1.2.3</h2>
+<h2 class="code-line" data-line-start=28 data-line-end=29 ><a id="130_28"></a>1.3.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="22" data-line-end="23">Fixed css with toggling dark mode</li>
+<li class="has-line-data" data-line-start="29" data-line-end="30">Reworked UI</li>
+<li class="has-line-data" data-line-start="30" data-line-end="31">Added a location stopper</li>
+<li class="has-line-data" data-line-start="31" data-line-end="32">Added map explorer</li>
+<li class="has-line-data" data-line-start="32" data-line-end="33">Hid auto reconnect from the ui because the exploit is used got patched</li>
 </ul>
-<h2 class="code-line" data-line-start=23 data-line-end=24 ><a id="122_23"></a>1.2.2</h2>
+<h2 class="code-line" data-line-start=33 data-line-end=34 ><a id="123_33"></a>1.2.3</h2>
 <ul>
-<li class="has-line-data" data-line-start="24" data-line-end="25">Made auto loot look better</li>
+<li class="has-line-data" data-line-start="34" data-line-end="35">Fixed css with toggling dark mode</li>
 </ul>
-<h2 class="code-line" data-line-start=25 data-line-end=26 ><a id="121_25"></a>1.2.1</h2>
+<h2 class="code-line" data-line-start=35 data-line-end=36 ><a id="122_35"></a>1.2.2</h2>
 <ul>
-<li class="has-line-data" data-line-start="26" data-line-end="27">Added direction changer to city/house raider</li>
-<li class="has-line-data" data-line-start="27" data-line-end="28">Improved auto reconnect detection</li>
+<li class="has-line-data" data-line-start="36" data-line-end="37">Made auto loot look better</li>
 </ul>
-<h2 class="code-line" data-line-start=28 data-line-end=29 ><a id="120_28"></a>1.2.0</h2>
+<h2 class="code-line" data-line-start=37 data-line-end=38 ><a id="121_37"></a>1.2.1</h2>
 <ul>
-<li class="has-line-data" data-line-start="29" data-line-end="30">Added city/house raider</li>
+<li class="has-line-data" data-line-start="38" data-line-end="39">Added direction changer to city/house raider</li>
+<li class="has-line-data" data-line-start="39" data-line-end="40">Improved auto reconnect detection</li>
 </ul>
-<h2 class="code-line" data-line-start=30 data-line-end=31 ><a id="110_30"></a>1.1.0</h2>
+<h2 class="code-line" data-line-start=40 data-line-end=41 ><a id="120_40"></a>1.2.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="31" data-line-end="32">Added tree mower</li>
-<li class="has-line-data" data-line-start="32" data-line-end="33">Added auto reconnect</li>
+<li class="has-line-data" data-line-start="41" data-line-end="42">Added city/house raider</li>
 </ul>
-<h2 class="code-line" data-line-start=33 data-line-end=34 ><a id="101_33"></a>1.0.1</h2>
+<h2 class="code-line" data-line-start=42 data-line-end=43 ><a id="110_42"></a>1.1.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="34" data-line-end="35">Auto travel won’t get stuck on events anymore</li>
+<li class="has-line-data" data-line-start="43" data-line-end="44">Added tree mower</li>
+<li class="has-line-data" data-line-start="44" data-line-end="45">Added auto reconnect</li>
 </ul>
-<h2 class="code-line" data-line-start=35 data-line-end=36 ><a id="100_35"></a>1.0.0</h2>
+<h2 class="code-line" data-line-start=45 data-line-end=46 ><a id="101_45"></a>1.0.1</h2>
 <ul>
-<li class="has-line-data" data-line-start="36" data-line-end="37">Added auto travel</li>
-<li class="has-line-data" data-line-start="37" data-line-end="38">Added a help menu</li>
+<li class="has-line-data" data-line-start="46" data-line-end="47">Auto travel won’t get stuck on events anymore</li>
 </ul>
-<h2 class="code-line" data-line-start=38 data-line-end=39 ><a id="021_38"></a>0.2.1</h2>
+<h2 class="code-line" data-line-start=47 data-line-end=48 ><a id="100_47"></a>1.0.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="39" data-line-end="40">Removed dome debug code</li>
-<li class="has-line-data" data-line-start="40" data-line-end="41">Made auto mine more clear that you need a metal detector</li>
+<li class="has-line-data" data-line-start="48" data-line-end="49">Added auto travel</li>
+<li class="has-line-data" data-line-start="49" data-line-end="50">Added a help menu</li>
 </ul>
-<h2 class="code-line" data-line-start=41 data-line-end=42 ><a id="020_41"></a>0.2.0</h2>
+<h2 class="code-line" data-line-start=50 data-line-end=51 ><a id="021_50"></a>0.2.1</h2>
 <ul>
-<li class="has-line-data" data-line-start="42" data-line-end="43">Added auto mine</li>
+<li class="has-line-data" data-line-start="51" data-line-end="52">Removed dome debug code</li>
+<li class="has-line-data" data-line-start="52" data-line-end="53">Made auto mine more clear that you need a metal detector</li>
 </ul>
-<h2 class="code-line" data-line-start=43 data-line-end=44 ><a id="010_43"></a>0.1.0</h2>
+<h2 class="code-line" data-line-start=53 data-line-end=54 ><a id="020_53"></a>0.2.0</h2>
 <ul>
-<li class="has-line-data" data-line-start="44" data-line-end="45">Added auto XP</li>
-<li class="has-line-data" data-line-start="45" data-line-end="46">Added auto doublestep</li>
+<li class="has-line-data" data-line-start="54" data-line-end="55">Added auto mine</li>
+</ul>
+<h2 class="code-line" data-line-start=55 data-line-end=56 ><a id="010_55"></a>0.1.0</h2>
+<ul>
+<li class="has-line-data" data-line-start="56" data-line-end="57">Added auto XP</li>
+<li class="has-line-data" data-line-start="57" data-line-end="58">Added auto doublestep</li>
 </ul>
 `
 }
@@ -1374,14 +1610,15 @@ globalThis.popupHelp=function(){// I need the \ so there aren't indentations and
     Auto double step will automaticly double step.\
     Auto mine with metal detector will mine if you have a metal detctor equiped and a shovel.\
     Auto travel will automaticly travel to the desired coords. Using a boat is quicker and more reliable.\
-    If you don't have a boat equiped you may get stuck. Tree mower will auto farm trees.\
+    If you don't have a boat equiped you may get stuck.\
+    Tree mower will auto farm trees. The fences setting will automativaly craft wood fences if you want.\
     I am aware that auto city and house raider will miss some loot.\
     Location stopper will stop at locations that aren't natural or rare.\
-    Use it while travel is running to stop.\
-    Check the players box to stop for players.\
-    Free Cam used wasd to move around. You can't manually move while doing this. Free Cam also only shows stuff that is seen on mapexplorer.\
+    Location logger will write down any location that aren't natural except holes unless you do locationLogger.markHoles=true; in the console.\
+    Free Cam uses wasd to move around. Free Cam also only shows stuff that is seen on mapexplorer.\
     The coord input on freecam let you go directly to coords. Ex. 0,0.\
     Map explore uses <a href='https://pfg.pw' target='blank'>Pfg's</a> map explorer.\
+    Event tag will go to any events on screen for xp while going to the coords.\
     Waypoint travel will go to the first waypoint then the second and so on. Recommended to navigate around oceans.\
     You can save waypoints to local storage and load them from there. Local storage is shared across the current browser and will stay if you reload.\
       ", undefined);
@@ -1389,10 +1626,10 @@ globalThis.popupHelp=function(){// I need the \ so there aren't indentations and
 // mapexplorer popup
 globalThis.popupMap=function(){
     POPUP.new('<a href="https://pfg.pw" target="_blank">MapExplorer by pfg</a>',
-    '<iframe src="https://pfg.pw/mapexplorer/" width=640 height=640 class="embed-responsive-item">',
+    '<iframe src="https://pfg.pw/mapexplorer/#,'+(YOU.x*30).toString()+','+(YOU.y*-30).toString()+','+YOU.x.toString()+','+(YOU.y*-1).toString()+','+'30" width=640 height=640 class="embed-responsive-item">',
     undefined);
     document.getElementById('event-desc').style.maxHeight='650px';
-    POPUP.evBox.style.maxHeight="900px"
+    POPUP.evBox.style.maxHeight="900px";
 };
 globalThis.doesArrayIncludeArray=function(array1,array2){//js doesnt compare arrays well
     for(i=0;i<array1.length;i++){
@@ -1423,16 +1660,19 @@ function init(){
     insertedHTML.innerHTML=
     //this is the html added to the bottom of the webpage
     `
+    <div id="Utility Hot Bar" style="margin:auto;width:636px;height:144px;">
     <div class='complexHr'>
         <span class="header">Utility</span>
     </div>
-    <div id="Utility Hot Bar" style="margin:auto;width:636px;height:62px;">
         <div class="tool toolUnClicked" onclick=" doubleStep.toggle()" id="doubleStep">Auto Double Step</div>
         <div class="tool toolUnClicked" id="eventFind">
             <span onclick=eventStop.toggle() >Location Stopper</span>
             
-            <label for='playerStop'>Players</label>
-            <input type="checkbox" id='playerStop' onchange="eventStop.updateNewPlayer(this.checked)" style="margin-bottom:0px;">
+            <span onclick="eventStop.popup();" style="border:1px solid black;">Configure</span>
+        </div>
+        <div class="tool toolUnClicked" id="locationLogger">
+            <span onclick=" locationLogger.toggle()">Location Logger</span>
+            <div class="toolUnClicked" onclick="locationLogger.show()">Show Logs</div>
         </div>
         <div class="tool toolUnClicked" id="freeCam">
             <span onclick=freeCam.toggle() >Free Cam</span>
@@ -1444,11 +1684,11 @@ function init(){
         <div class="tool toolUnClicked" onclick=changelog.showChangelog() id="help">Changelog</div>
         <div class="tool toolUnClicked" onclick=popupHelp() id="help">Help</div>
     </div>`+
-   `
+    `
+   <div id="Tool Hot Bar" style="margin:auto;width:636px;height:62px;">
    <div class='complexHr'>
             <span class="header">Bots</span>
     </div>
-   <div id="Tool Hot Bar" style="margin:auto;width:636px;height:62px;">
         <style>
         .tool{
             margin:2px 2px;
@@ -1499,30 +1739,48 @@ function init(){
             <span onclick=controller.toggle('treeBot')>
                 Tree Mower
             </span>
-            <label for="treeDefaultDir">Dir</label>
-            <select name="treeDefaultDir" id="treeDefaultDir" style="background:inherit;">
+            <label for="treeDefaultDir">Dir:</label>
+            <select name="treeDefaultDir" id="treeDefaultDir" style="background:inherit;max-width:50px;" onchange="treeBot.defaultDir=this.value">\
                 <option value="n">North</option>
+                <option value="ne">North-East</option>
                 <option value="e">East</option>
+                <option value="se">South-East</option>
                 <option value="s">South</option>
+                <option value="sw">South-West</option>
                 <option value="w">West</option>
-            </select>
+                <option value="nw">North-West</option>
+            </select>\
+            <label for="treeAutoFence">Fences:</label>
+            <input id="treeAutoFence" type="checkbox" onchange="treeBot.updateFence(this.checked)">
         </div>
         <div class="tool toolUnClicked" id="autoLoot">
             <span onclick=controller.toggle('autoLoot') >C/H Raider</span>
             <span onclick="autoLoot.popup();" style="border:1px solid black;">Configure</span>
         </div>
+        <div class="tool toolUnClicked" id="bigXP">
+            <div onclick=controller.toggle("bigXP")>Event Tag</div>
+            <input type="number" id="bigXPX" placeholder="X" onchange="bigXPBot.changeDestinationX(this.value)" style="width:88px">
+            <input type="number" id="bigXPY" placeholder="Y" onchange="bigXPBot.changeDestinationY(this.value)" style="width:88px">
+        </div>
         <div class="tool toolUnClicked" id="wayPointTravel">
             <span onclick=controller.toggle("wayPointTravel")>Waypoint Travel</span>
             <span onclick="wayPointTravel.popup();" style="border:1px solid black;">Configure</span>
         </div>
-    </div><br>`
+    </div>`
         /*<div class="tool toolUnClicked" onclick=autoReconnect.toggle() id="reconnect">Auto Reconnect</div>*/ // auto reconnect was removed in 1.0.4 R.I.P.
     ;
+    insertedHTML.innerHTML=insertedHTML.innerHTML.replaceAll('\n','');
     var target=document.getElementById('game-content').getElementsByClassName('mid-screencontainer scrollbar')[0];
     target.appendChild(insertedHTML);
     EQUIP.menuEl.style.width="420px";
     BUILD.boxEl.style.width="420px";
+    POPUP.evBox.style.maxHeight="900px";// debatable but I like it so too bad
+    document.getElementById('event-desc').style.maxHeight='650px';
     cycleAligner.initialize();
     globalThis.LightningClientIniialized=true;
+    sideScreens=document.getElementsByClassName('side-screencontainer');// mobile stuff
+    for(i=0;i<2;i++){
+        sideScreens[i].style.top='1250px';
+    }
 }
 init();

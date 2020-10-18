@@ -1,5 +1,17 @@
 # Changelog
 *** 
+## 2.0.0
+* 2.0.0 UPDATE
+* Browser extension
+* Mapexplorer now brings you to your current coords
+* Now you can use freecam while auto walking
+* Added the ability to configure location stopper to ignore tiles
+* Now you can enable auto fence crafting in tree mower
+* Added diagonals to tree bot
+* Added a Location logger
+* Added a travel bot to tag events for xp
+* You can now use this on mobile with bookmarklets
+* Made event raider ui much more user friendly
 ## 1.5.1
 * Added a bookmarklet
 * Added in diagonals to event raider
@@ -7,7 +19,7 @@
 ## 1.5.0
 * Added the ability to teleport anywhere with freecam
 * Made city/house raider not get stuck as often
-* Added in a system to alling scripts running to the cycles
+* Added in a system to alligning scripts running to the cycles
 * Added in the ability to choose what to mine for in auto mine
 * Added the ability to choose what to get from city/house raider
 * Added waypoint travel

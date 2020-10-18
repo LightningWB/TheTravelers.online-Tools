@@ -1,0 +1,25 @@
+{
+    "manifest_version": 2,
+    "name": "The Travelers.online Tools",
+    "description": "Tools to automate in thetravelers.online",
+    "version": "2.0.0",
+    "homepage_url":"https://github.com/LightningWB/TheTravelers.online-Tools",
+    "icons":{
+        "64":"icons/64.png"
+    },
+    "permissions":[
+        "activeTab"
+    ],
+    "content_scripts":[
+        {
+        "matches":["https://thetravelers.online/*"],
+        "js":["scripts/inject.js"],
+        "run_at":"document_idle"
+        }
+    ],
+    "browser_action":{
+        "default_title": "thetravelers.online tools",
+        "default_popup": "ui/popup.html",
+        "browser_style":true
+    }
+}

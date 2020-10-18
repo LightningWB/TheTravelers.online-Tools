@@ -1,0 +1,17 @@
+.header{
+    text-align: center;
+    font-size: 20pt;
+}
+.content{
+    text-align: center;
+    font-size: 15pt;
+}
+.links{
+    text-align: center;
+    font-size: 12pt;
+}
+body{
+    min-width: 350px;
+    margin-left: 0px;
+    margin-right: 0px;
+}
