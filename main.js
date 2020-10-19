@@ -904,7 +904,7 @@ globalThis.bigXPBot={
     },
     run(){
         found=false;
-        if(this.getEvents){spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H', exempt=this.exemptList);if(spiralResults.found==true){found=true;}}
+        if(this.getEvents){spiralResults=spiralFind(0, 0, 1, 961, 'C', target2='H', target3='WOOO', exempt=this.exemptList);if(spiralResults.found==true){found=true;}}
         if(found==true){
             dir=this.getDir(spiralResults.relX+YOU.x, spiralResults.relY+YOU.y);
         }
