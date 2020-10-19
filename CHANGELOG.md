@@ -1,5 +1,7 @@
 # Changelog
-*** 
+***
+## 2.0.1
+* Fixed event tag getting stuck
 ## 2.0.0
 * 2.0.0 UPDATE
 * Browser extension

@@ -1514,93 +1514,97 @@ globalThis.changelog={
     changes:
     `
     <h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="Changelog_0"></a>Changelog</h1>
-<hr>
-<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="200_2"></a>2.0.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="3" data-line-end="4">2.0.0 UPDATE</li>
-<li class="has-line-data" data-line-start="4" data-line-end="5">Browser extension</li>
-<li class="has-line-data" data-line-start="5" data-line-end="6">Mapexplorer now brings you to your current coords</li>
-<li class="has-line-data" data-line-start="6" data-line-end="7">Now you can use freecam while auto walking</li>
-<li class="has-line-data" data-line-start="7" data-line-end="8">Added the ability to configure location stopper to ignore tiles</li>
-<li class="has-line-data" data-line-start="8" data-line-end="9">Now you can enable auto fence crafting in tree mower</li>
-<li class="has-line-data" data-line-start="9" data-line-end="10">Added diagonals to tree bot</li>
-<li class="has-line-data" data-line-start="10" data-line-end="11">Added a Location logger</li>
-<li class="has-line-data" data-line-start="11" data-line-end="12">Added a travel bot to tag events for xp</li>
-<li class="has-line-data" data-line-start="12" data-line-end="13">You can now use this on mobile with bookmarklets</li>
-<li class="has-line-data" data-line-start="13" data-line-end="14">Made event raider ui much more user friendly</li>
-</ul>
-<h2 class="code-line" data-line-start=14 data-line-end=15 ><a id="151_14"></a>1.5.1</h2>
-<ul>
-<li class="has-line-data" data-line-start="15" data-line-end="16">Added a bookmarklet</li>
-<li class="has-line-data" data-line-start="16" data-line-end="17">Added in diagonals to event raider</li>
-<li class="has-line-data" data-line-start="17" data-line-end="18">Now you can enter waypoints as a list</li>
-</ul>
-<h2 class="code-line" data-line-start=18 data-line-end=19 ><a id="150_18"></a>1.5.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="19" data-line-end="20">Added the ability to teleport anywhere with freecam</li>
-<li class="has-line-data" data-line-start="20" data-line-end="21">Made city/house raider not get stuck as often</li>
-<li class="has-line-data" data-line-start="21" data-line-end="22">Added in a system to alligning scripts running to the cycles</li>
-<li class="has-line-data" data-line-start="22" data-line-end="23">Added in the ability to choose what to mine for in auto mine</li>
-<li class="has-line-data" data-line-start="23" data-line-end="24">Added the ability to choose what to get from city/house raider</li>
-<li class="has-line-data" data-line-start="24" data-line-end="25">Added waypoint travel</li>
-<li class="has-line-data" data-line-start="25" data-line-end="26">Added changelog</li>
-</ul>
-<h2 class="code-line" data-line-start=26 data-line-end=27 ><a id="140_26"></a>1.4.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="27" data-line-end="28">Added freecam</li>
-</ul>
-<h2 class="code-line" data-line-start=28 data-line-end=29 ><a id="130_28"></a>1.3.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="29" data-line-end="30">Reworked UI</li>
-<li class="has-line-data" data-line-start="30" data-line-end="31">Added a location stopper</li>
-<li class="has-line-data" data-line-start="31" data-line-end="32">Added map explorer</li>
-<li class="has-line-data" data-line-start="32" data-line-end="33">Hid auto reconnect from the ui because the exploit is used got patched</li>
-</ul>
-<h2 class="code-line" data-line-start=33 data-line-end=34 ><a id="123_33"></a>1.2.3</h2>
-<ul>
-<li class="has-line-data" data-line-start="34" data-line-end="35">Fixed css with toggling dark mode</li>
-</ul>
-<h2 class="code-line" data-line-start=35 data-line-end=36 ><a id="122_35"></a>1.2.2</h2>
-<ul>
-<li class="has-line-data" data-line-start="36" data-line-end="37">Made auto loot look better</li>
-</ul>
-<h2 class="code-line" data-line-start=37 data-line-end=38 ><a id="121_37"></a>1.2.1</h2>
-<ul>
-<li class="has-line-data" data-line-start="38" data-line-end="39">Added direction changer to city/house raider</li>
-<li class="has-line-data" data-line-start="39" data-line-end="40">Improved auto reconnect detection</li>
-</ul>
-<h2 class="code-line" data-line-start=40 data-line-end=41 ><a id="120_40"></a>1.2.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="41" data-line-end="42">Added city/house raider</li>
-</ul>
-<h2 class="code-line" data-line-start=42 data-line-end=43 ><a id="110_42"></a>1.1.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="43" data-line-end="44">Added tree mower</li>
-<li class="has-line-data" data-line-start="44" data-line-end="45">Added auto reconnect</li>
-</ul>
-<h2 class="code-line" data-line-start=45 data-line-end=46 ><a id="101_45"></a>1.0.1</h2>
-<ul>
-<li class="has-line-data" data-line-start="46" data-line-end="47">Auto travel won’t get stuck on events anymore</li>
-</ul>
-<h2 class="code-line" data-line-start=47 data-line-end=48 ><a id="100_47"></a>1.0.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="48" data-line-end="49">Added auto travel</li>
-<li class="has-line-data" data-line-start="49" data-line-end="50">Added a help menu</li>
-</ul>
-<h2 class="code-line" data-line-start=50 data-line-end=51 ><a id="021_50"></a>0.2.1</h2>
-<ul>
-<li class="has-line-data" data-line-start="51" data-line-end="52">Removed dome debug code</li>
-<li class="has-line-data" data-line-start="52" data-line-end="53">Made auto mine more clear that you need a metal detector</li>
-</ul>
-<h2 class="code-line" data-line-start=53 data-line-end=54 ><a id="020_53"></a>0.2.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="54" data-line-end="55">Added auto mine</li>
-</ul>
-<h2 class="code-line" data-line-start=55 data-line-end=56 ><a id="010_55"></a>0.1.0</h2>
-<ul>
-<li class="has-line-data" data-line-start="56" data-line-end="57">Added auto XP</li>
-<li class="has-line-data" data-line-start="57" data-line-end="58">Added auto doublestep</li>
-</ul>
+    <hr>
+    <h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="201_2"></a>2.0.1</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="3" data-line-end="4">Fixed event tag getting stuck</li>
+    </ul>
+    <h2 class="code-line" data-line-start=4 data-line-end=5 ><a id="200_4"></a>2.0.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="5" data-line-end="6">2.0.0 UPDATE</li>
+    <li class="has-line-data" data-line-start="6" data-line-end="7">Browser extension</li>
+    <li class="has-line-data" data-line-start="7" data-line-end="8">Mapexplorer now brings you to your current coords</li>
+    <li class="has-line-data" data-line-start="8" data-line-end="9">Now you can use freecam while auto walking</li>
+    <li class="has-line-data" data-line-start="9" data-line-end="10">Added the ability to configure location stopper to ignore tiles</li>
+    <li class="has-line-data" data-line-start="10" data-line-end="11">Now you can enable auto fence crafting in tree mower</li>
+    <li class="has-line-data" data-line-start="11" data-line-end="12">Added diagonals to tree bot</li>
+    <li class="has-line-data" data-line-start="12" data-line-end="13">Added a Location logger</li>
+    <li class="has-line-data" data-line-start="13" data-line-end="14">Added a travel bot to tag events for xp</li>
+    <li class="has-line-data" data-line-start="14" data-line-end="15">You can now use this on mobile with bookmarklets</li>
+    <li class="has-line-data" data-line-start="15" data-line-end="16">Made event raider ui much more user friendly</li>
+    </ul>
+    <h2 class="code-line" data-line-start=16 data-line-end=17 ><a id="151_16"></a>1.5.1</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="17" data-line-end="18">Added a bookmarklet</li>
+    <li class="has-line-data" data-line-start="18" data-line-end="19">Added in diagonals to event raider</li>
+    <li class="has-line-data" data-line-start="19" data-line-end="20">Now you can enter waypoints as a list</li>
+    </ul>
+    <h2 class="code-line" data-line-start=20 data-line-end=21 ><a id="150_20"></a>1.5.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="21" data-line-end="22">Added the ability to teleport anywhere with freecam</li>
+    <li class="has-line-data" data-line-start="22" data-line-end="23">Made city/house raider not get stuck as often</li>
+    <li class="has-line-data" data-line-start="23" data-line-end="24">Added in a system to alligning scripts running to the cycles</li>
+    <li class="has-line-data" data-line-start="24" data-line-end="25">Added in the ability to choose what to mine for in auto mine</li>
+    <li class="has-line-data" data-line-start="25" data-line-end="26">Added the ability to choose what to get from city/house raider</li>
+    <li class="has-line-data" data-line-start="26" data-line-end="27">Added waypoint travel</li>
+    <li class="has-line-data" data-line-start="27" data-line-end="28">Added changelog</li>
+    </ul>
+    <h2 class="code-line" data-line-start=28 data-line-end=29 ><a id="140_28"></a>1.4.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="29" data-line-end="30">Added freecam</li>
+    </ul>
+    <h2 class="code-line" data-line-start=30 data-line-end=31 ><a id="130_30"></a>1.3.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="31" data-line-end="32">Reworked UI</li>
+    <li class="has-line-data" data-line-start="32" data-line-end="33">Added a location stopper</li>
+    <li class="has-line-data" data-line-start="33" data-line-end="34">Added map explorer</li>
+    <li class="has-line-data" data-line-start="34" data-line-end="35">Hid auto reconnect from the ui because the exploit is used got patched</li>
+    </ul>
+    <h2 class="code-line" data-line-start=35 data-line-end=36 ><a id="123_35"></a>1.2.3</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="36" data-line-end="37">Fixed css with toggling dark mode</li>
+    </ul>
+    <h2 class="code-line" data-line-start=37 data-line-end=38 ><a id="122_37"></a>1.2.2</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="38" data-line-end="39">Made auto loot look better</li>
+    </ul>
+    <h2 class="code-line" data-line-start=39 data-line-end=40 ><a id="121_39"></a>1.2.1</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="40" data-line-end="41">Added direction changer to city/house raider</li>
+    <li class="has-line-data" data-line-start="41" data-line-end="42">Improved auto reconnect detection</li>
+    </ul>
+    <h2 class="code-line" data-line-start=42 data-line-end=43 ><a id="120_42"></a>1.2.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="43" data-line-end="44">Added city/house raider</li>
+    </ul>
+    <h2 class="code-line" data-line-start=44 data-line-end=45 ><a id="110_44"></a>1.1.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="45" data-line-end="46">Added tree mower</li>
+    <li class="has-line-data" data-line-start="46" data-line-end="47">Added auto reconnect</li>
+    </ul>
+    <h2 class="code-line" data-line-start=47 data-line-end=48 ><a id="101_47"></a>1.0.1</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="48" data-line-end="49">Auto travel won’t get stuck on events anymore</li>
+    </ul>
+    <h2 class="code-line" data-line-start=49 data-line-end=50 ><a id="100_49"></a>1.0.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="50" data-line-end="51">Added auto travel</li>
+    <li class="has-line-data" data-line-start="51" data-line-end="52">Added a help menu</li>
+    </ul>
+    <h2 class="code-line" data-line-start=52 data-line-end=53 ><a id="021_52"></a>0.2.1</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="53" data-line-end="54">Removed dome debug code</li>
+    <li class="has-line-data" data-line-start="54" data-line-end="55">Made auto mine more clear that you need a metal detector</li>
+    </ul>
+    <h2 class="code-line" data-line-start=55 data-line-end=56 ><a id="020_55"></a>0.2.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="56" data-line-end="57">Added auto mine</li>
+    </ul>
+    <h2 class="code-line" data-line-start=57 data-line-end=58 ><a id="010_57"></a>0.1.0</h2>
+    <ul>
+    <li class="has-line-data" data-line-start="58" data-line-end="59">Added auto XP</li>
+    <li class="has-line-data" data-line-start="59" data-line-end="60">Added auto doublestep</li>
+    </ul>
 `
 }
 // help popup
