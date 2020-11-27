@@ -106,7 +106,7 @@ globalThis.doubleStep={
 };
 // metal detector mine bot
 globalThis.mineBot={
-    getList:['copper_ore','scrap_metal','steel_shard'],
+    getList:['copper_ore','scrap_metal','steel_shard','cloth'],
     direction:'n',
     startMine(){
         this.running=true;
@@ -134,7 +134,7 @@ globalThis.mineBot={
     popup(){
         POPUP.new(
             'Auto Mine Configure',
-            'Will Get:'+JSON.stringify(this.getList)+'<br><ul><li onclick="mineBot.editGetList(\'copper_ore\');" style="cursor:pointer;">Copper</li><li onclick="mineBot.editGetList(\'scrap_metal\');" style="cursor:pointer;">Scrap</li><li onclick="mineBot.editGetList(\'steel_shard\');" style="cursor:pointer;">Steel</li></ul>\
+            'Will Get:'+JSON.stringify(this.getList)+'<br><ul><li onclick="mineBot.editGetList(\'copper_ore\');" style="cursor:pointer;">Copper</li><li onclick="mineBot.editGetList(\'cloth\');" style="cursor:pointer;">Cloth</li><li onclick="mineBot.editGetList(\'scrap_metal\');" style="cursor:pointer;">Scrap</li><li onclick="mineBot.editGetList(\'steel_shard\');" style="cursor:pointer;">Steel</li></ul>\
             <label for="defaultDir">Direction</label>\
             <select name="defaultDir" id="defaultDir" style="background:inherit;" onchange="mineBot.direction=this.value">\
                 <option value="n">North</option>\
