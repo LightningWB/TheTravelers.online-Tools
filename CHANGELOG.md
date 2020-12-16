@@ -1,5 +1,21 @@
 # Changelog
 ***
+## 2.1.0
+* Added a leaderboard viewer
+* Made the ui spaced better
+* Added configurable render distance
+* Auto structure mower
+* Update 1.1.0 compatible mining
+* Added world download
+* Added streamer mode
+* Revamped help menu
+* Improved event raider pathing to events and allowed more of blasted city to be explored if you have a blowtorch and bolt cutters
+* You can now log loot with event raider
+* Added anti interaction
+* Travel will now navigate around all oceans and most player structures unless you are near the world border
+* Added eta to travel bot
+* Improved tree mower
+* Added bresenham line algorithm to travel from slippyIceHero.
 ## 2.0.1
 * Fixed event tag getting stuck
 ## 2.0.0
@@ -21,7 +37,7 @@
 ## 1.5.0
 * Added the ability to teleport anywhere with freecam
 * Made city/house raider not get stuck as often
-* Added in a system to alligning scripts running to the cycles
+* Added in a system to align scripts running to the cycles
 * Added in the ability to choose what to mine for in auto mine
 * Added the ability to choose what to get from city/house raider
 * Added waypoint travel

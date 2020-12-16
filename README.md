@@ -1,6 +1,6 @@
 # TheTravelers.online-Tools
 Useful tools for thetravelers.online currently including auto xp, auto double step, auto mine, auto travel, tree mower and auto reconnect.
-# Instaliation
+# Installation
 Paste the contents of main.js into the console, install the extension which is what I recommend, or use the bookmarklet after logged into the travelers.online and the tools will show up. (Bookmarklets appear to be broken in firefox currently so you have to paste the code in or the extensions)
 ### Console
 1.   Either do ctrl-j or ctrl-shift-i and go to console.
@@ -8,7 +8,7 @@ Paste the contents of main.js into the console, install the extension which is w
 3.   Done.
 ### Extension
 1.   To setup the extension first download the extension folder.
-2.   Navigate to your browsers addon instalation area. Here are the popular ones.
+2.   Navigate to your browsers addon installation area. Here are the popular ones.
   - Chrome: chrome://extensions/
   - Firefox: about:debugging#/runtime/this-firefox
   - Edge: edge://extensions/
