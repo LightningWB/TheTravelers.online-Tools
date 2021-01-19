@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "The Travelers.online Tools",
     "description": "Tools to automate in thetravelers.online",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "homepage_url":"https://github.com/LightningWB/TheTravelers.online-Tools",
     "icons":{
         "64":"icons/64.png"

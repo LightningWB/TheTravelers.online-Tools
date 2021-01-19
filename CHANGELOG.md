@@ -1,5 +1,15 @@
 # Changelog
 ***
+## 2.1.1
+* Redid ui sizing to allow better browser and mobile compatibility
+* Changed auto ocean platform crafting to only collect certain resources
+* Revamped Auto Mine ui
+* Removed anti interaction as you can no longer leave interactions instantly
+* Updated event tag to not get stuck on looting events and players
+* Added mobile compatibility for world download
+* Halved bookmarklet file size so you can copy it far easier on mobile
+* Many improvements with the hotbar
+* This will likely be the final update for the travelers.online tools as I see no further way to improve it. This has been a wonderful project and I hope you enjoy using it.
 ## 2.1.0
 * Added a leaderboard viewer
 * Made the ui spaced better
