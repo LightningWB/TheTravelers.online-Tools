@@ -17,19 +17,25 @@ if(globalThis.LightningClientInitialized){// you can't pile up hot bar after hot
  * @param {String} target2 target two
  * @param {String} target3 target three
  * @param {Number[][]} exempt an exempt array structured similar to [[0,0], [1,1]]
+ * @param {boolean} ignoreOneAway for tree bot
  */
-globalThis.spiralFind = (x, y, step, count, target, target2=null, target3=null, exempt=[]) => {
+globalThis.spiralFind = (x, y, step, count, target, target2=null, target3=null, exempt=[], getOneAway=true) => {
     let distance = 0;
     let range = 1;
     let direction = 'up';
     count=WORLD.tilemap.length-1;// render distance compatibility
     for ( let i = 0; i < count; i++ ) {
         // stuff I added
-        if (!doesArrayIncludeArray(exempt,[YOU.x+x,YOU.y+y])){
-			tile=document.getElementById((YOU.x+x)+'|'+(YOU.y+y)).textContent
-            if(tile==target || tile==target2 || tile==target3){
-                return {found:true, relX:x, relY:y};
-            }
+        if ( (getOneAway || Math.max(Math.abs(x), Math.abs(y))>1) && !doesArrayIncludeArray(exempt,[YOU.x+x,YOU.y+y])){
+			ele=WORLD.tilemap.find(e=>e.id===(YOU.x+x)+'|'+(YOU.y+y));
+			if(ele)
+			{
+				tile = ele.textContent;
+				if(tile==target || tile==target2 || tile==target3){
+					return {found:true, relX:x, relY:y};
+				}
+
+			}
         }
         // not my stuff
         distance++;
@@ -67,13 +73,11 @@ globalThis.spiralFind = (x, y, step, count, target, target2=null, target3=null, 
             default:
                 break;
         }
-    }
+	}
     return {found:false, relX:null, relY:null};
 };
 // copy stuff
 globalThis.copyToClipboard=(e=>{const t=document.createElement("textarea");t.value=e||' ',t.setAttribute("readonly",""),t.style.position="absolute",t.style.left="-9999px",document.body.appendChild(t),t.select(),document.execCommand("copy"),document.body.removeChild(t)});// minified
-// pvp engine
-// feel free to use this
 //Xp
 globalThis.XPBot={
     startXP(){
@@ -272,7 +276,11 @@ globalThis.mineBot={
 			<label for="mineAutoPlatform">Automatically craft ocean platforms:</label>\
             <input id="mineAutoPlatform" type="checkbox" onchange="mineBot.autoPlatform=this.checked" '+streamerMode.boolToCheck(this.autoPlatform)+'>\
             ',
-            undefined
+            [{
+				disp:'close',
+				func:()=>POPUP.hide(),
+				disable:false
+			}]
         )
     },
     editGetList(item){
@@ -346,7 +354,7 @@ globalThis.travelBot={
 	yDest:YOU.y,
 	tmap:[],
 	debugDOM:false,
-	invalidStand:['+','#','<b>#</b>','D','<b>D</b>','$','┬', '░', 'w'],
+	invalidStand:['+','#','<b>#</b>','D','<b>D</b>','$','┬', WORLD.TILES.worldedge, WORLD.TILES.water],
 	/**positive for clockwise negative for counter */
 	spinDir:1,
 	lastFlip:0,// this locks it to changing direction every blank seconds. this might also let it get out of unfinished tunnels in walls
@@ -714,7 +722,7 @@ globalThis.travelBot={
     waterAt(loc){
 		relX=loc[0];
 		relY=loc[1];
-        if (this.invalidStand.indexOf(document.getElementById((relX+YOU.x)+'|'+(relY+YOU.y)).innerHTML)!=-1){
+        if (this.invalidStand.indexOf((WORLD.tilemap.find(e=>e.id===(relX+YOU.x)+'|'+(relY+YOU.y)) || {innerHTML:'some super long string to only be used in case of no water visible'}).innerHTML)!=-1){
             return true;
         }
         else{
@@ -763,7 +771,14 @@ globalThis.travelBot={
 	{
 		for (let i=0; i<this.invalidStand.length; i++)
 		{
-			if(this.tmap.includes(this.invalidStand[i]))return true;
+			if(this.invalidStand[i]===WORLD.TILES.water)
+			{
+				if(EQUIP.current!='small boat')return true;
+			}
+			else if(this.tmap.includes(this.invalidStand[i]))
+			{
+				return true;
+			}
 		}
 		return false;
 	},
@@ -781,14 +796,17 @@ globalThis.travelBot={
 		'\
 		Bresenham line algorithm goes directly towards the destination in a straight line instead of going diagonally then straight. This doesn\'t make it any faster but changes the way you get there.\n\
 		<input type="checkbox" id="travel-bresenham-check" onchange="travelBot.bresenham=this.checked" '+streamerMode.boolToCheck(this.bresenham)+'><label for="travel-bresenham-check">Bresenham algorithm</label>\
-		')
+		',[{
+			disp:'close',
+			func:()=>POPUP.hide(),
+			disable:false
+		}])
 	}
 };
 // tree farmer
 globalThis.treeBot={
     autoMakeWoodFence:false,// secret feature// not anymore
 	defaultDir:'n',
-	treeElem:document.getElementById('hands-tree'),
 	exempt:[],// render distance compatibility
     start(){
 		this.running=true;
@@ -806,15 +824,14 @@ globalThis.treeBot={
                 }
             }
 		}
-		HANDS.gettree(this.treeElem);
         if (this.nextMove==='move'){
-            if(this.goto(this.targetX, this.targetY)==='there'){
+            if(this.getOneAway() || this.goto(this.targetX, this.targetY)==='there'){
 				this.nextMove='';
 				this.run();
 			}
         }
         else{
-            spiralResults=spiralFind(0, 0, 1, 961, 't', 'WOW', 'WOW', this.exempt);
+            spiralResults=spiralFind(0, 0, 1, 961, 't', 'WOW', 'WOW', this.exempt, false);
             if (spiralResults.found===true){
                 this.nextMove='move';
                 this.targetX=spiralResults.relX+YOU.x;
@@ -823,7 +840,8 @@ globalThis.treeBot={
 				this.goto(this.targetX, this.targetY);
             }
             else{
-                setDir(this.defaultDir);
+				setDir(this.defaultDir);
+				if(this.distanceTo(x,y)>1 && XP.sp>=10 && YOU.currentTile!='M' && YOU.currentTile!='w')DSTEP.click();
             }
         }
     },
@@ -831,7 +849,72 @@ globalThis.treeBot={
         //clearInterval(this.timer);
         this.running=false;
 		this.nextMove='travel';
-    },
+	},
+	getTile(relX,relY)
+	{
+		return (WORLD.tilemap.find(e=>e.id===(YOU.x+relX)+'|'+(YOU.y+relY)) || {innerHTML:''}).innerHTML;
+	},
+	getOneAway()
+	{
+		if(YOU.currentTile==='w')return false;
+		let ring = [
+			{
+				dir:'n',
+				x:0,
+				y:1
+			},
+			{
+				dir:'ne',
+				x:1,
+				y:1
+			},
+			{
+				dir:'e',
+				x:1,
+				y:0
+			},
+			{
+				dir:'se',
+				x:1,
+				y:-1
+			},
+			{
+				dir:'s',
+				x:0,
+				y:-1
+			},
+			{
+				dir:'sw',
+				x:-1,
+				y:-1
+			},
+			{
+				dir:'w',
+				x:-1,
+				y:0
+			},
+			{
+				dir:'nw',
+				x:-1,
+				y:1
+			}
+		]
+		let changed = false;
+		for(let loc of ring)
+		{
+			let tile = this.getTile(loc.x, loc.y);
+			if(tile===WORLD.TILES.tree)
+			{
+				SOCKET.send({
+					"action": "break",
+					"option": BUILD.breaking_with_id,
+					"dir": loc.dir
+				});
+				changed=true;
+			}
+		}
+		return changed;
+	},
 	goto(x, y){
         if (y>YOU.y){// north south
             travelDir='n';
@@ -855,7 +938,7 @@ globalThis.treeBot={
             return 'there';
         }
         else{
-			if(this.distanceTo(x,y)>1 && XP.sp>=10 && YOU.currentTile!='M' && YOU.currentTile!='w')DSTEP.click();
+			if(this.distanceTo(x,y)>2 && XP.sp>=10 && YOU.currentTile!='M' && YOU.currentTile!='w')DSTEP.click();
             setDir(travelDir);
             return 'notThere';
         }
@@ -894,7 +977,10 @@ globalThis.autoLoot={
 	log:[],
     start(){
         this.running=true;
-        //this.timer=setInterval(function(){autoLoot.raid()}, 1200);// I am doing 1.2 seconds because some cycles take longer and getting stuck in events is annoying. It will be slightly slower but less prone to getting stuck
+		//this.timer=setInterval(function(){autoLoot.raid()}, 1200);// I am doing 1.2 seconds because some cycles take longer and getting stuck in events is annoying. It will be slightly slower but less prone to getting stuck
+		if(!doubleStep.running){
+		    doubleStep.toggle();
+		}
     },
     run(){
         if(this.nextMove=='steal'){
@@ -993,10 +1079,13 @@ globalThis.autoLoot={
                 this.prevCoords={x:YOU.x, y:YOU.y};
             }
             else{
-                setDir(this.defaultDir);
-                SOCKET.send({
+                if(YOU.dir!=this.defaultDir)setDir(this.defaultDir, true);
+                if(YOU.state==='event')SOCKET.send({
                     action:'event_choice',
                     option:'__leave__'
+				})
+				if(YOU.state==='looting')SOCKET.send({
+                    action:'loot_next'
                 })
             }
         }
@@ -1007,7 +1096,8 @@ globalThis.autoLoot={
         if(doubleStep.running){
             doubleStep.toggle();
         }
-        this.nextMove='travel'
+		this.nextMove='travel';
+		stopTravels();
     },
     goto(x, y){
         if (y>YOU.y){// north south
@@ -1020,15 +1110,14 @@ globalThis.autoLoot={
             travelDir='';
         }
         if (x>YOU.x){// east west
-            travelDir=travelDir+'e';
+            travelDir+='e';
         }
         else if (x<YOU.x){
-            travelDir=travelDir+'w';
+            travelDir+='w';
         }
         else{
-            travelDir=travelDir+'';
-		}// double step will get you off by one
-		if((this.nextMove=='collect' || this.nextMove=='back') && DSTEP.btnIsActive())DSTEP.click();
+            travelDir+='';
+		}
         if(travelDir===''){
             if (this.nextMove=='move'){
                 this.nextMove='collect';
@@ -1040,7 +1129,7 @@ globalThis.autoLoot={
         }
         else{
             this.leaveEvent();
-            setDir(travelDir);
+            if(YOU.dir!=travelDir)setDir(travelDir, true);
             return 'notThere';
         }
     },
@@ -1261,7 +1350,8 @@ globalThis.autoLoot={
             if(classList[i].value=='exit event'){
 				classList[i].click();
 				if(this.debugMode)console.log(classList[i]);
-                SOCKET.send({'action':'event_choice','option':'__leave__'});
+				SOCKET.send({'action':'event_choice','option':'__leave__'});
+				SOCKET.send({'action':'loot_next'});
                 return true;
             }
         }
@@ -1368,7 +1458,7 @@ globalThis.autoLoot={
 			<input style="margin:0px;font-size:15px;" type="button" onclick="copyToClipboard(localStorage.getItem('travelersEventRaiderLog'))" value="Copy Log">\
 			<input style="margin:0px;font-size:15px;" type="button" onclick="localStorage.removeItem('travelersEventRaiderLog')" value="Delete Log">
             <label for="defaultDir">Direction</label>\
-            <select name="defaultDir" id="defaultDir" style="background:inherit;" onchange="autoLoot.defaultDir=this.value">\
+            <select name="defaultDir" id="defaultDir" style="background:inherit;" onchange="autoLoot.defaultDir=this.value" value=`+this.defaultDir+`>\
                 <option value="n">North</option>\
                 <option value="ne">North-East</option>\
                 <option value="e">East</option>\
@@ -1378,8 +1468,12 @@ globalThis.autoLoot={
                 <option value="w">West</option>\
                 <option value="nw">North-West</option>\
             </select>\
-            `,
-            undefined
+            `.replace('value="'+this.defaultDir+'"', 'value="'+this.defaultDir+'" selected'),
+            [{
+				disp:'close',
+				func:()=>POPUP.hide(),
+				disable:false
+			}]
         );
         document.getElementById('event-desc').style.maxHeight='650px';
     },
@@ -1573,7 +1667,11 @@ globalThis.wayPointTravel={
                 <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="localStorage.setItem('waypoints',JSON.stringify(wayPointTravel.wayPointList));wayPointTravel.popup();">Load to local storage</div>\
                 <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="wayPointTravel.wayPointList=JSON.parse(localStorage.getItem('waypoints'));wayPointTravel.popup();">Load from local storage</div>\
                 <div style="border:1px solid black;text-align:center;cursor:pointer;" onclick="wayPointTravel.wayPointList=[];wayPointTravel.popup();">Delete All</div>`,
-            undefined
+				[{
+					disp:'close',
+					func:()=>POPUP.hide(),
+					disable:false
+				}]
         );
     }
 };
@@ -1698,7 +1796,8 @@ globalThis.eventStop={
             this.item('┬')+
             this.item('¶')+
             this.item('◻')+
-            this.item('▭')+
+			this.item('▭')+
+			this.item('Θ')+
             this.item('B')+
             this.item('_')+
             this.item('▋')+
@@ -1708,8 +1807,14 @@ globalThis.eventStop={
             this.item('⬓')+
             this.item('⬟')+
             this.item('▥')+
-            this.item('◫')+
-            `</ul>`
+			this.item('◫')+
+			this.item('⬡')+
+			`</ul>`,
+			[{
+				disp:'close',
+				func:()=>POPUP.hide(),
+				disable:false
+			}]
         )
     },
     item(character){
@@ -1785,7 +1890,11 @@ globalThis.locationLogger={
         }
         POPUP.evBox.style.maxHeight="900px";
         // warning long line of unreadable html
-        POPUP.new('locations','<p style="height:500px;overflow:scroll;">'+localStorage.getItem('travelersLocationLogger').split('},').join('}<br>').replace('[','').replace(']','')+'</p>'+'<hr><div style="cursor:pointer;border:1px solid black;text-align:center;" onclick=copyToClipboard(localStorage.getItem("travelersLocationLogger"));this.innerText="copied";this.onclick="" >Copy</div><div style="cursor:pointer;border:1px solid black;text-align:center;" onclick=localStorage.removeItem("travelersLocationLogger");POPUP.hide()>Clear Logs</div>',undefined)
+        POPUP.new('locations','<p style="height:500px;overflow:scroll;">'+localStorage.getItem('travelersLocationLogger').split('},').join('}<br>').replace('[','').replace(']','')+'</p>'+'<hr><div style="cursor:pointer;border:1px solid black;text-align:center;" onclick=copyToClipboard(localStorage.getItem("travelersLocationLogger"));this.innerText="copied";this.onclick="" >Copy</div><div style="cursor:pointer;border:1px solid black;text-align:center;" onclick=localStorage.removeItem("travelersLocationLogger");POPUP.hide()>Clear Logs</div>',[{
+			disp:'close',
+			func:()=>POPUP.hide(),
+			disable:false
+		}])
     }
 };
 // freecam
@@ -1793,13 +1902,12 @@ globalThis.freeCam={
     running:false,
     speed:1,
     x:0,
-    y:0,
+	y:0,
+	delay:50,
     toggle(){
-        WORLD.build=eval('('+WORLD.build.toString().replace('YOU.x + j','YOU.x + freeCam.x + j').replace('YOU.y - i','YOU.y + freeCam.y - i')+')');// keep moving while freecam
-        YOU.getCoordString=eval('('+YOU.getCoordString.toString().replace(' YOU.x ','(YOU.x+freeCam.x)').replace(' YOU.y;','(YOU.y+freeCam.y);')+')');// display coords
         if (this.running==false){
             this.running=true;
-            this.timer=setInterval(function(){freeCam.run()}, 30);
+            this.timer=setInterval(function(){freeCam.run()}, this.delay);
             if(document.getElementById('freeCamX').value!=''){
                 this.x=YOU.x*-1+Number(document.getElementById('freeCamX').value)
             }
@@ -1884,14 +1992,19 @@ globalThis.worldDownload={
     configure(){
         POPUP.new(
             'World Download Configuration',
-            this.getPopupDesc().replace(/\n/g,'')
+			this.getPopupDesc().replace(/\n/g,''),
+			[{
+				disp:'close',
+				func:()=>POPUP.hide(),
+				disable:false
+			}]
         )
     },
     getPopupDesc(){
         return `
         Buffer:<input type="number" onchange="worldDownload.buffer=Number(this.value)" value="`+this.buffer+`"><br>
         Text Size:<input type="number" onchange="worldDownload.fontSize=Number(this.value)" value="`+this.fontSize+`"><br>
-        Hide natural terrain:<input type="checkbox" onchange="worldDownload.hideTerrain=Boolean(this.checked)" `+streamerMode.boolToCheck(this.hideTerrain)/*I dont feel like moving it for just this one bit*/+`><br>
+        Hide natural terrain:<input type="checkbox" onchange="worldDownload.hideTerrain=Boolean(this.checked)" `+streamerMode.boolToCheck(this.hideTerrain)/*I dont feel like moving boolToCheck for just this one bit*/+`><br>
         `
     },
     async popup(){
@@ -2516,128 +2629,136 @@ globalThis.changelog={
         POPUP.new(null,this.changes.replace(/\n/g,''))// no longer have to add in \
     },
     changes:
-    `<h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="Changelog_0"></a>Changelog</h1>
+    `<h1 id="changelog">Changelog</h1>
 	<hr>
-	<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="211_2"></a>2.1.1</h2>
+	<h2 id="2-1-2">2.1.2</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="3" data-line-end="4">Redid ui sizing to allow better browser and mobile compatibility</li>
-	<li class="has-line-data" data-line-start="4" data-line-end="5">Changed auto ocean platform crafting to only collect certain resources</li>
-	<li class="has-line-data" data-line-start="5" data-line-end="6">Revamped Auto Mine ui</li>
-	<li class="has-line-data" data-line-start="6" data-line-end="7">Removed anti interaction as you can no longer leave interactions instantly</li>
-	<li class="has-line-data" data-line-start="7" data-line-end="8">Updated event tag to not get stuck on looting events and players</li>
-	<li class="has-line-data" data-line-start="8" data-line-end="9">Added mobile compatibility for world download</li>
-	<li class="has-line-data" data-line-start="9" data-line-end="10">Halved bookmarklet file size so you can copy it far easier on mobile</li>
-	<li class="has-line-data" data-line-start="10" data-line-end="11">Many improvements with the hotbar</li>
-	<li class="has-line-data" data-line-start="11" data-line-end="12">This will likely be the final update for the travelers.online tools as I see no further way to improve it. This has been a wonderful project and I hope you enjoy using it.</li>
+	<li>Fixed a bug with travel getting stuck on oceans</li>
+	<li>Added some slight optimizations for event raider</li>
+	<li>You can now press the f key to toggle free cam and space to return to the player</li>
+	<li>Tree mower will now &quot;dismantle&quot; trees to harvest more than one per cycle</li>
 	</ul>
-	<h2 class="code-line" data-line-start=12 data-line-end=13 ><a id="210_12"></a>2.1.0</h2>
+	<h2 id="2-1-1">2.1.1</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="13" data-line-end="14">Added a leaderboard viewer</li>
-	<li class="has-line-data" data-line-start="14" data-line-end="15">Made the ui spaced better</li>
-	<li class="has-line-data" data-line-start="15" data-line-end="16">Added configurable render distance</li>
-	<li class="has-line-data" data-line-start="16" data-line-end="17">Auto structure mower</li>
-	<li class="has-line-data" data-line-start="17" data-line-end="18">Update 1.1.0 compatible mining</li>
-	<li class="has-line-data" data-line-start="18" data-line-end="19">Added world download</li>
-	<li class="has-line-data" data-line-start="19" data-line-end="20">Added streamer mode</li>
-	<li class="has-line-data" data-line-start="20" data-line-end="21">Revamped help menu</li>
-	<li class="has-line-data" data-line-start="21" data-line-end="22">Improved event raider pathing to events and allowed more of blasted city to be explored if you have a blowtorch and bolt cutters</li>
-	<li class="has-line-data" data-line-start="22" data-line-end="23">You can now log loot with event raider</li>
-	<li class="has-line-data" data-line-start="23" data-line-end="24">Added anti interaction</li>
-	<li class="has-line-data" data-line-start="24" data-line-end="25">Travel will now navigate around all oceans and most player structures unless you are near the world border</li>
-	<li class="has-line-data" data-line-start="25" data-line-end="26">Added eta to travel bot</li>
-	<li class="has-line-data" data-line-start="26" data-line-end="27">Improved tree mower</li>
-	<li class="has-line-data" data-line-start="27" data-line-end="28">Added bresenham line algorithm to travel from slippyIceHero.</li>
+	<li>Redid ui sizing to allow better browser and mobile compatibility</li>
+	<li>Changed auto ocean platform crafting to only collect certain resources</li>
+	<li>Revamped Auto Mine ui</li>
+	<li>Removed anti interaction as you can no longer leave interactions instantly</li>
+	<li>Updated event tag to not get stuck on looting events and players</li>
+	<li>Added mobile compatibility for world download</li>
+	<li>Halved bookmarklet file size so you can copy it far easier on mobile</li>
+	<li>Many improvements with the hotbar</li>
+	<li>This will likely be the final update for the travelers.online tools as I see no further way to improve it. This has been a wonderful project and I hope you enjoy using it.</li>
 	</ul>
-	<h2 class="code-line" data-line-start=28 data-line-end=29 ><a id="201_28"></a>2.0.1</h2>
+	<h2 id="2-1-0">2.1.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="29" data-line-end="30">Fixed event tag getting stuck</li>
+	<li>Added a leaderboard viewer</li>
+	<li>Made the ui spaced better</li>
+	<li>Added configurable render distance</li>
+	<li>Auto structure mower</li>
+	<li>Update 1.1.0 compatible mining</li>
+	<li>Added world download</li>
+	<li>Added streamer mode</li>
+	<li>Revamped help menu</li>
+	<li>Improved event raider pathing to events and allowed more of blasted city to be explored if you have a blowtorch and bolt cutters</li>
+	<li>You can now log loot with event raider</li>
+	<li>Added anti interaction</li>
+	<li>Travel will now navigate around all oceans and most player structures unless you are near the world border</li>
+	<li>Added eta to travel bot</li>
+	<li>Improved tree mower</li>
+	<li>Added bresenham line algorithm to travel from slippyIceHero.</li>
 	</ul>
-	<h2 class="code-line" data-line-start=30 data-line-end=31 ><a id="200_30"></a>2.0.0</h2>
+	<h2 id="2-0-1">2.0.1</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="31" data-line-end="32">2.0.0 UPDATE</li>
-	<li class="has-line-data" data-line-start="32" data-line-end="33">Browser extension</li>
-	<li class="has-line-data" data-line-start="33" data-line-end="34">Mapexplorer now brings you to your current coords</li>
-	<li class="has-line-data" data-line-start="34" data-line-end="35">Now you can use freecam while auto walking</li>
-	<li class="has-line-data" data-line-start="35" data-line-end="36">Added the ability to configure location stopper to ignore tiles</li>
-	<li class="has-line-data" data-line-start="36" data-line-end="37">Now you can enable auto fence crafting in tree mower</li>
-	<li class="has-line-data" data-line-start="37" data-line-end="38">Added diagonals to tree bot</li>
-	<li class="has-line-data" data-line-start="38" data-line-end="39">Added a Location logger</li>
-	<li class="has-line-data" data-line-start="39" data-line-end="40">Added a travel bot to tag events for xp</li>
-	<li class="has-line-data" data-line-start="40" data-line-end="41">You can now use this on mobile with bookmarklets</li>
-	<li class="has-line-data" data-line-start="41" data-line-end="42">Made event raider ui much more user friendly</li>
+	<li>Fixed event tag getting stuck</li>
 	</ul>
-	<h2 class="code-line" data-line-start=42 data-line-end=43 ><a id="151_42"></a>1.5.1</h2>
+	<h2 id="2-0-0">2.0.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="43" data-line-end="44">Added a bookmarklet</li>
-	<li class="has-line-data" data-line-start="44" data-line-end="45">Added in diagonals to event raider</li>
-	<li class="has-line-data" data-line-start="45" data-line-end="46">Now you can enter waypoints as a list</li>
+	<li>2.0.0 UPDATE</li>
+	<li>Browser extension</li>
+	<li>Mapexplorer now brings you to your current coords</li>
+	<li>Now you can use freecam while auto walking</li>
+	<li>Added the ability to configure location stopper to ignore tiles</li>
+	<li>Now you can enable auto fence crafting in tree mower</li>
+	<li>Added diagonals to tree bot</li>
+	<li>Added a Location logger</li>
+	<li>Added a travel bot to tag events for xp</li>
+	<li>You can now use this on mobile with bookmarklets</li>
+	<li>Made event raider ui much more user friendly</li>
 	</ul>
-	<h2 class="code-line" data-line-start=46 data-line-end=47 ><a id="150_46"></a>1.5.0</h2>
+	<h2 id="1-5-1">1.5.1</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="47" data-line-end="48">Added the ability to teleport anywhere with freecam</li>
-	<li class="has-line-data" data-line-start="48" data-line-end="49">Made city/house raider not get stuck as often</li>
-	<li class="has-line-data" data-line-start="49" data-line-end="50">Added in a system to align scripts running to the cycles</li>
-	<li class="has-line-data" data-line-start="50" data-line-end="51">Added in the ability to choose what to mine for in auto mine</li>
-	<li class="has-line-data" data-line-start="51" data-line-end="52">Added the ability to choose what to get from city/house raider</li>
-	<li class="has-line-data" data-line-start="52" data-line-end="53">Added waypoint travel</li>
-	<li class="has-line-data" data-line-start="53" data-line-end="54">Added changelog</li>
+	<li>Added a bookmarklet</li>
+	<li>Added in diagonals to event raider</li>
+	<li>Now you can enter waypoints as a list</li>
 	</ul>
-	<h2 class="code-line" data-line-start=54 data-line-end=55 ><a id="140_54"></a>1.4.0</h2>
+	<h2 id="1-5-0">1.5.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="55" data-line-end="56">Added freecam</li>
+	<li>Added the ability to teleport anywhere with freecam</li>
+	<li>Made city/house raider not get stuck as often</li>
+	<li>Added in a system to align scripts running to the cycles</li>
+	<li>Added in the ability to choose what to mine for in auto mine</li>
+	<li>Added the ability to choose what to get from city/house raider</li>
+	<li>Added waypoint travel</li>
+	<li>Added changelog</li>
 	</ul>
-	<h2 class="code-line" data-line-start=56 data-line-end=57 ><a id="130_56"></a>1.3.0</h2>
+	<h2 id="1-4-0">1.4.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="57" data-line-end="58">Reworked UI</li>
-	<li class="has-line-data" data-line-start="58" data-line-end="59">Added a location stopper</li>
-	<li class="has-line-data" data-line-start="59" data-line-end="60">Added map explorer</li>
-	<li class="has-line-data" data-line-start="60" data-line-end="61">Hid auto reconnect from the ui because the exploit is used got patched</li>
+	<li>Added freecam</li>
 	</ul>
-	<h2 class="code-line" data-line-start=61 data-line-end=62 ><a id="123_61"></a>1.2.3</h2>
+	<h2 id="1-3-0">1.3.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="62" data-line-end="63">Fixed css with toggling dark mode</li>
+	<li>Reworked UI</li>
+	<li>Added a location stopper</li>
+	<li>Added map explorer</li>
+	<li>Hid auto reconnect from the ui because the exploit is used got patched</li>
 	</ul>
-	<h2 class="code-line" data-line-start=63 data-line-end=64 ><a id="122_63"></a>1.2.2</h2>
+	<h2 id="1-2-3">1.2.3</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="64" data-line-end="65">Made auto loot look better</li>
+	<li>Fixed css with toggling dark mode</li>
 	</ul>
-	<h2 class="code-line" data-line-start=65 data-line-end=66 ><a id="121_65"></a>1.2.1</h2>
+	<h2 id="1-2-2">1.2.2</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="66" data-line-end="67">Added direction changer to city/house raider</li>
-	<li class="has-line-data" data-line-start="67" data-line-end="68">Improved auto reconnect detection</li>
+	<li>Made auto loot look better</li>
 	</ul>
-	<h2 class="code-line" data-line-start=68 data-line-end=69 ><a id="120_68"></a>1.2.0</h2>
+	<h2 id="1-2-1">1.2.1</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="69" data-line-end="70">Added city/house raider</li>
+	<li>Added direction changer to city/house raider</li>
+	<li>Improved auto reconnect detection</li>
 	</ul>
-	<h2 class="code-line" data-line-start=70 data-line-end=71 ><a id="110_70"></a>1.1.0</h2>
+	<h2 id="1-2-0">1.2.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="71" data-line-end="72">Added tree mower</li>
-	<li class="has-line-data" data-line-start="72" data-line-end="73">Added auto reconnect</li>
+	<li>Added city/house raider</li>
 	</ul>
-	<h2 class="code-line" data-line-start=73 data-line-end=74 ><a id="101_73"></a>1.0.1</h2>
+	<h2 id="1-1-0">1.1.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="74" data-line-end="75">Auto travel won’t get stuck on events anymore</li>
+	<li>Added tree mower</li>
+	<li>Added auto reconnect</li>
 	</ul>
-	<h2 class="code-line" data-line-start=75 data-line-end=76 ><a id="100_75"></a>1.0.0</h2>
+	<h2 id="1-0-1">1.0.1</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="76" data-line-end="77">Added auto travel</li>
-	<li class="has-line-data" data-line-start="77" data-line-end="78">Added a help menu</li>
+	<li>Auto travel won&#39;t get stuck on events anymore</li>
 	</ul>
-	<h2 class="code-line" data-line-start=78 data-line-end=79 ><a id="021_78"></a>0.2.1</h2>
+	<h2 id="1-0-0">1.0.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="79" data-line-end="80">Removed dome debug code</li>
-	<li class="has-line-data" data-line-start="80" data-line-end="81">Made auto mine more clear that you need a metal detector</li>
+	<li>Added auto travel</li>
+	<li>Added a help menu</li>
 	</ul>
-	<h2 class="code-line" data-line-start=81 data-line-end=82 ><a id="020_81"></a>0.2.0</h2>
+	<h2 id="0-2-1">0.2.1</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="82" data-line-end="83">Added auto mine</li>
+	<li>Removed dome debug code</li>
+	<li>Made auto mine more clear that you need a metal detector</li>
 	</ul>
-	<h2 class="code-line" data-line-start=83 data-line-end=84 ><a id="010_83"></a>0.1.0</h2>
+	<h2 id="0-2-0">0.2.0</h2>
 	<ul>
-	<li class="has-line-data" data-line-start="84" data-line-end="85">Added auto XP</li>
-	<li class="has-line-data" data-line-start="85" data-line-end="86">Added auto doublestep</li>
+	<li>Added auto mine</li>
 	</ul>
+	<h2 id="0-1-0">0.1.0</h2>
+	<ul>
+	<li>Added auto XP</li>
+	<li>Added auto doublestep</li>
+	</ul>
+	
 `
 };
 // fancy help menu
@@ -2684,6 +2805,7 @@ globalThis.help={
 				'Structure Mower',
 				'Streamer Mode',
 				//'Anti Int',
+				//'Spam',
 				'Home'
 			]
 		)
@@ -2698,7 +2820,7 @@ globalThis.help={
 		help.genPopup('Location Logger', 'This will log any unknown locations it sees and store them in local storage so they stick around after a browser refresh.', ['Tools']);
 	},
 	freeCam(){
-		help.genPopup('Free Cam', 'This will let you leave your body and see client side world generation. Only places shown on mapexplorer will appear. Use wasd to move.(sorry mobile)', ['Tools']);
+		help.genPopup('Free Cam', 'This will let you leave your body and see client side world generation. Only places shown on mapexplorer will appear. Use wasd to move. F toggles freecam and space brings you back to your traveler. (sorry mobile)', ['Tools']);
 	},
 	renderDistance(){
 		help.genPopup('Render Distance', 'This will allow you to have a smaller or larger render distance. Use the buttons to increase or decrease by 10, 5 or 1. You can keep this at 5 if you have a slow computer.', ['Tools']);
@@ -2711,6 +2833,9 @@ globalThis.help={
 	},
 	antiInt(){
 		help.genPopup('Anti Int', 'This sends leave interaction packets to keep you out of fights. Delay is the delay between packets in milliseconds. I recommend 20 for casual play and 0 for dangerous locations. Please note that it is possible for a bot to start a fight before you exit events so be wary of them.', ['Tools']);
+	},
+	spam(){
+		help.genPopup('Spam', 'If you currently have a radio wave transmitter equipped this will spam a given frequency with a given message.', ['Tools']);
 	},
 	//#endregion
 	//#region bots
@@ -2815,7 +2940,7 @@ globalThis.help={
 		`,['Contributors'])
 	}
 	//#endregion
-}
+};
 globalThis.help.textToPopup={// this has to be done after events are defined
 	'Home':help.nav,
 	'Tools':help.tools,// tools
@@ -2827,6 +2952,7 @@ globalThis.help.textToPopup={// this has to be done after events are defined
 	'Structure Mower':help.structureMower,
 	'Streamer Mode':help.streamerMode,
 	'Anti Int':help.antiInt,
+	'Spam':help.spam,
 	'Bots':help.bots,// bots
 	'Auto XP':help.autoXP,
 	'Auto Mine':help.autoMine,
@@ -2846,7 +2972,7 @@ globalThis.help.textToPopup={// this has to be done after events are defined
 	'slippyIceHero':help.slippyIceHero,
 	'acedog3':help.acedog3,
 	'Close':()=>POPUP.hide()
-}
+};
 // help popup
 globalThis.popupHelp=function(){// I need the \ so there aren't indentations and it is much more readable
 	help.nav();// the new help is so much better
@@ -3010,7 +3136,7 @@ globalThis.resetDarkMode = function()
         padding-right:5px;
     }
 	`
-}
+};
 function globalInjections()
 {
 	ENGINE.applyData=eval('('+ENGINE.applyData.toString().replace('ENGINE.callCycleTriggers();', 'ENGINE.midCycleDataCall=midCycleDataCall||false;ENGINE.callCycleTriggers();')+')');
@@ -3020,7 +3146,30 @@ function globalInjections()
 	globalThis.renderDistanceTimeout=setTimeout(()=>{renderDistance.reload(0, false);}, 100);
 	`)+')');
 	SETTINGS.toggleDarkMode=eval('('+SETTINGS.toggleDarkMode.toString().replace(RegExp('}$'), 'resetDarkMode();\n}')+')');
-}
+	WORLD.build=eval('('+WORLD.build.toString().replace('YOU.x + j','YOU.x + freeCam.x + j').replace('YOU.y - i','YOU.y + freeCam.y - i')+')');// keep moving while freecam
+    YOU.getCoordString=eval('('+YOU.getCoordString.toString().replace(' YOU.x ','(YOU.x+freeCam.x)').replace(' YOU.y;','(YOU.y+freeCam.y);')+')');// display coords
+	/**
+	 * 
+	 * @param {KeyboardEvent} ev 
+	 */
+	window.onkeypress=function(ev)
+	{
+		if(ev.target.tagName==='INPUT' || ev.target.tagName==='TEXTAREA' || ev.shiftKey)return;
+		if(ev.key==='f')
+		{
+			ev.preventDefault();
+			freeCam.toggle();
+		}
+		if(ev.key===' ')
+		{
+			ev.preventDefault();
+			freeCam.x=0;
+			freeCam.y=0;
+			WORLD.build();
+			WORLD.checkPlayersAndObjs();
+		}
+	}
+};
 function init(){
     color.getColor();
     var insertedHTML=document.createElement("div");
@@ -3043,21 +3192,21 @@ function init(){
             <span onclick=" locationLogger.toggle()">Location Logger</span>
             <span class="configureBtn" onclick="locationLogger.show()">Show Logs</span>
         </div>
-        <div class="tool toolUnClicked" id="freeCam">
-            <span onclick=freeCam.toggle() >Free Cam</span>
-            <input type="number" placeholder=1 id="freeCamSpeed" onchange="freeCam.speed=Number(this.value)">
-            <input style="width:35px;" type="number" placeholder="X" id="freeCamX">
-            <input style="width:35px;" type="number" placeholder="Y" id="freeCamY">
-        </div>
+		<div class="tool toolUnClicked" id="freeCam">
+			<span onclick=freeCam.toggle() >Free Cam</span>
+			<input type="number" placeholder=1 id="freeCamSpeed" onchange="freeCam.speed=Number(this.value)">
+			<input style="width:35px;" type="number" placeholder="X" id="freeCamX">
+			<input style="width:35px;" type="number" placeholder="Y" id="freeCamY">
+		</div>
         <div class="tool toolUnClicked" onclick=" renderDistance.open()" id="renderDistance">Render Distance</div>
         <div class="tool toolUnClicked" onclick=" autoBreaker.toggle()" id="autoBreaker">Structure Mower</div>
 		<div class="tool toolUnClicked" onclick=streamerMode.open() id="streamer">Streamer Mode</div>
 		`+/*<div class="tool toolUnClicked" id="antiInt">
-			<span  onclick=antiInt.toggle() >Anti Int</span>
-			<label for="antiIntSpeed">Delay:</label>
-			<input style="width:35px;" type="number" placeholder="20" id="antiIntSpeed" onchange="antiInt.delay=this.value" value=20>
+		<span  onclick=antiInt.toggle() >Anti Int</span>
+		<label for="antiIntSpeed">Delay:</label>
+		<input style="width:35px;" type="number" placeholder="20" id="antiIntSpeed" onchange="antiInt.delay=this.value" value=20>
 		</div>*/`
-    </div>`+
+	</div>`+
     `
     <div class='complexHr'>
             <span class="header">Bots</span>
@@ -3140,5 +3289,5 @@ function init(){
 	globalInjections();
 	resetDarkMode();
 	resizeHotBar();
-}
+};
 init();
