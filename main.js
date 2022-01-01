@@ -1036,6 +1036,9 @@ globalThis.autoLoot={
                 else if(POPUP.evTitle.innerHTML=='a weathered house'){
                     this.placeType='weathered'
                 }
+		else {
+		    this.placeType='other'
+		}
                 this.collect();
             }
             if(POPUP.isOpen==false&&LOOT.mainEl.style.display=='none'){this.leaveEvent()}
@@ -1135,6 +1138,9 @@ globalThis.autoLoot={
     },
     collect(){
         switch(this.placeType){
+	     case 'other':
+                    this.leaveEvent();
+                    break;
             case 'desolate':
                     this.handelEvent('a desolate city', 'the highway');
                     if(this.beenInTent==false){
